@@ -19,5 +19,7 @@ Also using illustrations of TOKORON which is the image character of Tokorozawa C
 See manual for detail dewcriptions which is on ysfSdCardHandler/manuals/manual.pdf.
 
 PROGRAMS ARE IN "master" branch.
+
+This is still Alpha-Version.
  
  
