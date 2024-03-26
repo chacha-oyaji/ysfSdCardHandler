@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script>
+	$().ready(function() {
+	});
+</script>
+</head>
+<body>
+	<div style="width: 39%; float: left;">
+
+		<th:block th:each="errorMsg,status : ${errorMessageList}">
+			<div th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></div>
+		</th:block>
+		<div th:each="startP : ${targetPosList}" th:text="${startP}"
+			th:style="|font-size:1.5em;float: left; margin: 5px;border:solid 1px #444;border-radius: 5px;cursor:pointer;${startP==presentPos?'background-color:#fcc;color:red':''}|"
+			th:onclick="$('#txtBankListFrom').val([[${startP}]]);submitAndStore2Target('frmShowBankList','divDirectoryList4Bank');"></div>
+		<br style="clear: both;">
+		<form method="post" enctype="multipart/form-data"
+			id="frmshowBankDirContents"
+			th:action="@{/execute/showBankDirContents}">
+			<input type="hidden" name="branchDirName" class="cBranchDirName">
+		</form>
+		<form method="post" enctype="multipart/form-data"
+			id="frmRecallDirContents"
+			th:action="@{/execute/recallDirContentsInBank}">
+			<input type="hidden" name="branchDirName" class="cBranchDirName">
+		</form>
+		<form method="post" enctype="multipart/form-data"
+			id="frmDeleteThisBankDir" th:action="@{/execute/deleteThisBankDir}">
+			<input type="hidden" name="branchDirName" class="cBranchDirName">
+		</form>
+		<table style="width: 100%">
+			<tr>
+				<th>復活させるディレクトリ名</th>
+				<th>作製日時</th>
+				<th>指示操作</th>
+			</tr>
+			<tr th:each="dirElement,status : ${dirStructureList}">
+				<td th:text="${dirElement.dirName}" th:onClick="submitShowRecoveryDirContents([[${dirElement.dirName}]]);" style="cursor:pointer;"></td>
+				<td
+					th:text="${#dates.format(dirElement.backupDate,'yyyy/MM/dd HH:mm')}"></td>
+				<td>
+					<!-- 
+				<button
+						th:onClick="submitShowRecoveryDirContents([[${dirElement.dirName}]]);">内容参照</button>
+				 -->
+					<button
+						th:onClick="submitRecallDirContents([[${dirElement.dirName}]]);">使用面移動</button>
+					<button th:onClick="showReNameplain([[${dirElement.dirName}]]);">名称変更</button>
+					<button th:onClick="deleteThisBank([[${dirElement.dirName}]]);">削除</button>
+				</td>
+			</tr>
+		</table>
+	</div>
+	<div id="divImageListOfBank"
+		style="width: 59%; float: right; display: none;"></div>
+	<div id="divRenameOperator"
+		style="width: 59%; float: right; display: none;">
+		<form id="frmRenameOneOfBankDir"
+			th:action="@{/execute/renameOneOfBankDir}" method="post"
+			enctype="multipart/form-data">
+			<table>
+				<tr>
+					<th>変更するDIR名</th>
+					<td><input type="hidden" class="cRenameBranchDirName"
+						id="txtPresentBranchDirName" name="branchDirName"><input
+						type="text" class="cRenameBranchDirName" name="txtBranchDirName"
+						disabled="disabled"></td>
+				</tr>
+				<tr>
+					<th>変更後の名称</th>
+					<td><input type="text" id="txtNewBranchDirName"
+						class="cRenameBranchDirName" name="newBranchDirName"
+						placeholder="例：CQ_1"></td>
+				</tr>
+				<tr>
+					<th>操作</th>
+					<td><button type="button" onclick="submitRenameDir();">名称変更実行</button></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<br style="clear: both;">
+</body>
+</html>

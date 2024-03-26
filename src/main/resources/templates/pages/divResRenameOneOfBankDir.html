@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+<meta charset="UTF-8">
+<title>dummy for Kick restore</title>
+<script th:inline="javascript">
+	$().ready(function() {
+		/*[# th:if="${newBranchDirName != null && newBranchDirName != ''}"]*/
+		$("#btnMountAndLoad").click();
+		/*[/]*/
+	});
+</script>
+</head>
+<body>
+	<th:block th:each="errorMsg,status : ${errorMessageList}">
+		<p th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></p>
+	</th:block>
+	<div th:if="${errorMessageList.size()==0}"
+		th:text="|「${branchDirName}」は「${newBranchDirName}」に変更されました。|"></div>
+</body>
+</html>

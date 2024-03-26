@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script th:inline="javascript">
+	$().ready(function() {
+	});
+</script>
+</head>
+<body>
+
+	<div style="border: 2px solid #444; float: left;">
+
+		<h2 style="background-color: #ffc;"
+			th:text="|設定完了報告：${#calendars.format(#calendars.createNow(), 'yyyy年MM月dd日 HH時mm分ss秒')}"></h2>
+		<th:block th:each="errorMsg,status : ${errorMessageList}">
+			<p th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></p>
+		</th:block>
+
+		<table>
+			<tr>
+				<th>項目名</th>
+				<th>設定値</th>
+			</tr>
+			<tr>
+				<th>SDCARD Drive名</th>
+				<td style="text-align: left;" th:text="${prop.sdCardDrive}"></td>
+			</tr>
+			<tr>
+				<th>Radio ID(半角５文字)</th>
+				<td style="text-align: left;" th:text="${prop.radioId}"></td>
+			</tr>
+			<tr>
+				<th>呼出符号(半角１０文字以内)</th>
+				<td style="text-align: left;" th:text="${prop.myCallSign}"></td>
+			</tr>
+			<tr>
+				<th>ImageMagickの記録場所</th>
+				<td style="text-align: left;" th:text="${prop.imageMagickPath}"></td>
+			</tr>
+			<tr>
+				<th>ブラウザ・プログラム・ファイルのURI</th>
+				<td style="text-align: left;" th:text="${prop.browserPath}"></td>
+			</tr>
+			<tr>
+				<th>PHOTO下のファイル名頭文字</th>
+				<td style="text-align: left;" th:text="${prop.topLetterOfPhotoFile}"></td>
+			</tr>
+			<tr>
+				<th>PCTDIRデータ中の穴埋値</th>
+				<td style="text-align: left;"
+					th:text="|0x${prop.strFillByteInPctDir}|"></td>
+			</tr>
+			<tr>
+				<th>メモリバンクリスト表示行数</th>
+				<td style="text-align: left;"
+					th:text="${prop.listStepSize}"></td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

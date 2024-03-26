@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script th:inline="javascript">
+	$().ready(function() {
+		$("#dlgDetailDialog").dialog({
+			autoOpen : false,
+			minWidth : 680,
+			minHeight : 800
+		});
+		resetByDetailMode();
+		hideOrShowPseudoDeleted();
+		if (Cookies.get("sliderValue") == null) {
+			// スライダの初期値は320（*240）にしておきます。
+			Cookies.set("sliderValue", 320, {
+				expires : 30
+			});
+		}
+		setSliderValueByCookie();
+		var errorMsg;
+		errorMsg = /*[[${errorMessageList}]]*/Found_errorMessage
+		if (errorMsg != "") {
+			// エラーがあったときにはこちらが実行されます。
+		}
+		else {
+			$("#btnShowDirectory4Bank").click();
+		}
+	});
+</script>
+</head>
+<body>
+	<form id="frmDeleteMarking" method="post"
+		th:action="@{/execute/deleteMarking}">
+		<input type="hidden" id="txtImageIdOfDelete" name="targetImageId"
+			value="test">
+	</form>
+	<form id="frmCompleteDeleteAndExec" method="post"
+		th:action="@{/execute/deleteCompletely}">
+		<input type="hidden" id="txtImageIdOfDeleteCompletely"
+			name="targetImageId" value="test">
+	</form>
+	<form id="frmRecoverMarking" method="post"
+		th:action="@{/execute/recoverMarking}">
+		<input type="hidden" id="txtImageIdOfRecover" name="targetImageId"
+			value="test">
+	</form>
+	<div id="dlgDetailDialog" title="画像関連詳細情報">
+		<div
+			style="width: 156px; float: left; cursor: pointer; background-color: #fdc; text-align: center;border-radius:8px;border:solid 2px #888;"
+			id="divImageWidthValue"
+			ondblclick="Cookies.set('sliderValue', 320, {expires: 30}); setSliderValueByCookie();"
+			onclick="Cookies.set('sliderValue', 160, {expires: 30}); setSliderValueByCookie();"></div>
+		<div id="slider4ImageWidth"
+			style="width: calc(100% - 165px); float: left;"></div>
+
+		<div style="clear: both;">
+			<img id="imgOnDetailDescription" style="width: 320px;">
+		</div>
+		<table>
+			<tr>
+				<!--/*  javascript　関数showDetailOnThisImage()内でどちらかのボタンのみが表示されるようになっている。*/-->
+				<th>操作指示</th>
+				<td><button id="btnDeleteThis" style="background-color: pink;"
+						onclick="deleteMarking() ;">削除扱い保存</button>
+					<button id="btnDeleteThisCompletely" style="background-color: #f66;"
+						onclick="confirmCompleteDeleteAndExec();">完全削除</button>
+					<button id="btnRecoverThis" style="background-color: #8f8;"
+						onclick="recoverMarking();">復活</button></td>
+			</tr>
+			<!--/*  
+			<tr>
+				<td>管理ID</td>
+				<td id="tdTxtImageId"></td>
+			</tr>
+			*/-->
+			<tr>
+				<th>SYM</th>
+				<td id="tdTxtSym"></td>
+			</tr>
+			<tr>
+				<th>By</th>
+				<td><div id="tdTxtMyCallSign"></div></td>
+			</tr>
+			<tr>
+				<th>To</th>
+				<td><div id="tdTxtDestination"></div></td>
+			</tr>
+			<tr>
+				<th>記述</th>
+				<td><div id="tdTxtDescription"></div></td>
+			</tr>
+			<tr>
+				<th>記録日時</th>
+				<td><div id="tdTxtBaseDate"></div></td>
+			</tr>
+			<tr>
+				<th>送信日時</th>
+				<td><div id="tdTxtDate2Send"></div></td>
+			</tr>
+			<tr>
+				<th>受信日時</th>
+				<td><div id="tdTxtDate2Receive"></div></td>
+			</tr>
+			<tr>
+				<th>容量</th>
+				<td><div id="tdTxtPictureSize"></div></td>
+			</tr>
+			<tr>
+				<th>File名</th>
+				<td><div id="tdTxtFileCoreName"></div></td>
+			</tr>
+			<tr>
+				<th>F重複性</th>
+				<td><div id="tdTxtDuplicateOf"></div></td>
+			</tr>
+
+		</table>
+	</div>
+	<h1 th:text="|${title}(ファイル名中の最大値：${fs.presentMaxNumberInFileName})|" style="font-size:1.5em ; color:#822;"></h1>
+	<!--/* 
+	<span th:if="${fs!=null}"
+		th:text="|現在のファイル名中の最大整数値：${fs.presentMaxNumberInFileName}(${fs.pctDirListWithDisplayOrder.size()}管理要素)|"></span>
+	*/-->
+	<th:block th:each="errorMsg,status : ${errorMessageList}">
+		<p th:text="|(${status.count}) ${errorMsg}|" style="color:red;"></p>
+	</th:block>
+	<div style="width: 100%;">
+		<th:block th:if="${fs !=null && fs.pctDirListWithDisplayOrder !=null}">
+			<th:block th:each="entity : ${fs.pctDirListWithDisplayOrder}">
+				<div th:if="${entity.realFileExists}"
+					th:class="${entity.active?'cDivShowImage':'cDivHideImage'}"
+					th:style="|float: left; margin: 2px;border:${entity.borderDefinition()};background-color:${entity.backgroundDefinition};|">
+					<img
+						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
+						th:style="|width: 160px; height: 120px; margin: 5px;position: relative;|"
+						th:onclick="showDetailOnThisImage([[${entity}]],[[@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);">
+					<p></p>
+					<table class="CDetailScriptOfImage">
+						<!--/*  
+					*/-->
+						<tr>
+							<td>管理ID</td>
+							<td th:text="${entity.imageId}"></td>
+						</tr>
+						<tr>
+							<th>SYM</th>
+							<td
+								th:text="|${entity.symMeaning}(${T(java.lang.Integer).toHexString(entity.sym)})|"></td>
+						</tr>
+						<tr>
+							<th>By</th>
+							<td th:text="${entity.myCallSign}"></td>
+						</tr>
+						<tr>
+							<th>To</th>
+							<td th:text="${entity.destination}"></td>
+						</tr>
+						<tr>
+							<th>記述</th>
+							<td th:text="${entity.description}"></td>
+						</tr>
+						<tr>
+							<th>記録</th>
+							<td
+								th:text="${#dates.format(entity.baseDate,'yyyy/MM/dd HH:mm')}"></td>
+						</tr>
+						<tr>
+							<th>送信</th>
+							<td
+								th:text="${#dates.format(entity.date2Send,'yyyy/MM/dd HH:mm')}"></td>
+						</tr>
+						<tr>
+							<th>受信</th>
+							<td
+								th:text="${#dates.format(entity.date2Receive,'yyyy/MM/dd HH:mm')}"></td>
+						</tr>
+						<tr>
+							<th>容量</th>
+							<td th:text="|${entity.pictureSize} bytes|"></td>
+						</tr>
+						<tr>
+							<th>File名</th>
+							<td th:text="${entity.fileCoreName}"></td>
+						</tr>
+						<tr>
+							<th>重複</th>
+							<td th:if="${entity.duplicateOf!=null}"
+								th:text="|■${entity.duplicateOf}■|" style="color: red;"></td>
+							<td th:if="${entity.duplicateOf==null}"></td>
+						</tr>
+					</table>
+				</div>
+			</th:block>
+		</th:block>
+		<div style="clear: both;"></div>
+	</div>
+</body>
+</html>

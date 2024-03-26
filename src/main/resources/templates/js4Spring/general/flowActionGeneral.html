@@ -1,0 +1,229 @@
+<html xmlns:th="http://www.thymeleaf.org"
+	xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity5">
+<script type="text/javascript" th:inline="javascript"
+	th:fragment="javascriptBody">
+	/**
+	 * flowActionZero.js 完全な基調関数のみを記録。どの場合にも使うものしか入れない。
+	 */
+	var saveTo;
+	var formerDataBuffer = {
+		'jobList' : '',
+		'orgList' : '',
+		'personList' : ''
+	};
+	var additionalCondx = {
+		'jobCondx' : '',
+		'orgCondx' : '',
+		'personCondx' : ''
+	}
+	function sendRequestWithoutSaves(targetDiv, targetUrl, argumentData) {
+		sendRequestWithoutSavesCore(targetDiv, targetUrl, argumentData);
+		$(targetDiv).show();
+	}
+	/**
+	 * targetDivの表示・非表示操作を加えることなく、現状の表示divのままでtargetDivに特定の
+	 * URLの情報を入れ込むときに利用する。主として各List要求で利用される。
+	 * なお、targetDiv名称のところには、jQueryプリフィックス「#」はつけておくこと。
+	 * @param targetDiv
+	 * @param targetUrl
+	 * @param argumentData
+	 */
+	function sendRequestWithoutSavesCore(targetDiv, targetUrl, argumentData) {
+		$(".CLoadingDisplay").show();
+		var mesg = targetUrl;
+		var request = $.ajax({
+			url : targetUrl,
+			type : "post",
+			cache : false,
+			data : argumentData,
+			timeout : 10000,
+			async : false,
+			xhrFields : {
+				withCredentials : true
+			}
+		});
+		request.done(function(message) {
+			$(targetDiv).empty();
+			$(targetDiv).show();
+			//$(targetDiv).append(message);
+			$(targetDiv).html(message);
+		});
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			if (jqXHR.status != 403 && jqXHR.status != 400
+					&& jqXHR.status != 404) {
+				saveTo = "サーバの応答で問題(" + jqXHR.status + ")がおきました。"
+						+ "<br/>このエラーは長時間操作をしなかったときにも発生します。"
+						+ "リロードからやりなおしてください。";
+				$(targetDiv).html(saveTo);
+				alertMessage = "サーバの応答で問題(" + jqXHR.status + ")がおきました。"
+						+ "\nこのエラーは長時間操作をしなかったときにも発生します。" + "リロードからやりなおします。";
+				alert(alertMessage);
+			} else {
+				if (jqXHR.status == 400 || jqXHR.status == 403
+						|| jqXHR.status == 404)
+					location.reload();
+			}
+			$(targetDiv).show();
+
+		});
+		request.always(function() {
+			$(".CLoadingDisplay").hide();
+		});
+	}
+
+	function sendRequestWithSaves(targetDiv, saveTo, targetUrl, argumentData) {
+		$(".CLoadingDisplay").show();
+		var request = $.ajax({
+			url : targetUrl,
+			type : "post",
+			cache : false,
+			data : argumentData,
+			timeout : 10000,
+			async : false,
+			xhrFields : {
+				withCredentials : true
+			}
+		});
+		request.done(function(jqXHR, textStatus, errorThrown) {
+			$(targetDiv).empty();
+			$(targetDiv).html(textStatus);
+		});
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			saveTo = "サーバの応答で問題(" + textStatus.status + ")がおきました。"
+					+ "<br/>このエラーは長時間操作をしなかったときにも発生します。リロードからやりなおしてください。";
+			$(targetDiv).html(saveTo);
+			alertMessage = "サーバの応答で問題(" + message.status + ")がおきました。"
+					+ "\nこのエラーは長時間操作をしなかったときにも発生します。リロードからやりなおします。";
+			alert(alertMessage);
+			location.reload();
+		});
+		request.always(function() {
+			$(".CLoadingDisplay").hide();
+			$(targetDiv).show();
+		});
+	}
+	function logout() {
+		location.href = /*[[@{/logout}]]*/THYMELEAF_REPLACE;
+	}
+	function pageToUrl(url) {
+		location.href = url;
+	}
+	/*
+	 * location.href="～"のパラメータ付き動作をさせる。
+	 */
+	function postForm(url, data) {
+		var $form = $('<form/>', {
+			'action' : url,
+			'method' : 'post'
+		});
+		for ( var key in data) {
+			$form.append($('<input/>', {
+				'type' : 'hidden',
+				'name' : key,
+				'value' : data[key]
+			}));
+		}
+		$form.appendTo(document.body);
+		$form.submit().remove();
+	}
+	function submit2SpecUrl(destinationUrl, formId) {
+		$("#" + formId).attr('action', destinationUrl);
+		$("#" + formId).submit();
+	}
+	function submit2SpecUrlAndStore2Target(destinationUrl, formId, targetId,
+			tabPanelId, tabId) {
+		var formData = new FormData($("#" + formId).get(0));
+		$(".CLoadingDisplay").show();
+		$(".CProgressBar4Upload").show();
+		$(".CProgressBar4Download").show();
+		var request = $.ajax({
+			xhr : function() {
+				var xhrObject = new window.XMLHttpRequest();
+				// for Upload
+				xhrObject.upload.addEventListener("progress", function(evt) {
+					if (evt.lengthComputable) {
+						var percentComplete = ((evt.loaded / evt.total) * 100);
+						$(".CProgressBar4Upload")
+								.attr('value', percentComplete);
+					}
+				}, false);
+				// for Download
+				xhrObject.addEventListener("progress", function(evt) {
+					if (evt.lengthComputable) {
+						var percentComplete = ((evt.loaded / evt.total) * 100);
+						$(".CProgressBar4Download").attr('value',
+								percentComplete);
+					}
+				}, false);
+				return xhrObject;
+			},
+			url : destinationUrl,
+			type : "post",
+			// dataType : "string",
+			data : formData,
+			cache : false,
+			contentType : false,
+			processData : false,
+			//async: false,
+			dataType : "html"
+		});
+		request.done(function(data, textStatus, jqXHR) {
+			$("#" + targetId).html(data);
+			$("#" + targetId).show();
+			if (tabPanelId != null && tabId != null) {
+				$("#" + tabPanelId).tabs({
+					'active' : tabId
+				});
+				//alert("Find this tab on " + tabPanelId + " to " + tabId);
+			}
+		});
+		request.fail(function(jqXHR, textStatus, errorThrown) {
+			if (jqXHR.status == 0) {
+				$("#" + targetId).html(
+						"<h2>ERROR REPORT</h2> サーバーが落ちた模様です。<br/>"
+								+ (new Date()).toString());
+				$("#" + targetId).show();
+			} else if (jqXHR.status == 403 || jqXHR.status == 404
+					|| jqXHR.status == 401) {
+				// 権限違反の場合には、/loginClearを表示させる。
+				$("#" + targetId)
+						.load(/*[[@{/loginClear}]]*/THYMELEAF_REPLACE);
+				$("#" + targetId).show();
+			} else {
+				$("#" + targetId).html(
+						"<h2>ERROR REPORT</h2> Error code : " + jqXHR.status
+								+ "<br/>" + (new Date()).toString());
+				$("#" + targetId).show();
+				if (tabPanelId != null && tabId != null) {
+					// Tab found but do nothing because the execution was failed.
+				}
+			}
+		});
+		request.always(function() {
+			$(".CLoadingDisplay").hide();
+			$(".CProgressBar4Upload").hide();
+			$(".CProgressBar4Download").hide();
+		});
+	}
+
+	function submitAndStore2Target(formId, targetId, tabPanelId, tabId) {
+		submit2SpecUrlAndStore2Target($("#" + formId).prop("action"), formId,
+				targetId, tabPanelId, tabId);
+	}
+
+	// EasyMDEの要素でアクティブにする。
+	function createEasyMDE(targetTextAreaId) {
+		var variableName = new EasyMDE({
+			element : $(targetTextAreaId)[0],
+			toolbar : [ 'bold', 'italic', 'strikethrough', 'heading', '|'
+			//				,'heading-smaller' ,'heading-bigger' ,'heading-1' ,'heading-2' ,'heading-3'
+			, 'code', 'quote', 'unordered-list', 'ordered-list', 'link',
+					'clean-block', '|'
+					//				,'image'
+					, 'table', 'horizontal-rule', 'preview', 'side-by-side',
+					'fullscreen', '|', 'undo', '|', 'guide' ]
+		});
+		return variableName;
+	}
+</script>
+</html>

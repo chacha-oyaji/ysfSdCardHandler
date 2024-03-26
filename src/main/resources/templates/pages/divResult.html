@@ -1,0 +1,7 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<div th:if="${errorMessageList.length()!=0}" th:each="errorMsg : ${errorMessageList}" >
+	<p th:text="${errorMsg}" style="color:red;"></p>
+</div>
+</html>

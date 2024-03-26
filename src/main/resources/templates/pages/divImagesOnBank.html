@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script>
+	$().ready(function() {
+		$('.CDetailScriptOfBankImage').hide();
+	});
+</script>
+</head>
+<body>
+	<h2
+		style="font: 12px; background-color: #dfd; border-radius: 10px; border: solid 2px #888; text-align: center;">
+		<span style="background-color:pink;border-radius:4px;border:solid 1px black;float:left;"><label><input
+				type="checkbox" onchange="$('.CDetailScriptOfBankImage').toggle();">副情報</label></span><span th:text="${branchDirName}"></span> 
+	</h2>
+	<th:block th:each="errorMsg,status : ${errorMessageList}">
+		<div th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></div>
+	</th:block>
+
+	<div style="width: 100%; background-color: #dfd; padding: 3px;">
+		<th:block th:if="${fs !=null && fs.pctDirListWithDisplayOrder !=null}">
+			<th:block th:each="entity : ${fs.pctDirListWithDisplayOrder}">
+				<div th:if="${entity.realFileExists}"
+					th:class="${entity.active?'cDivShowImage':'cDivHideImage'}"
+					th:style="|float: left; margin: 2px;border:${entity.borderDefinition()};background-color:${entity.backgroundDefinition};|">
+<!--/*  
+					<img
+						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
+						th:style="|width: 160px; height: 120px; margin: 5px;position: relative;|"
+						th:onclick="showDetailOnThisImage([[${entity}]],[[@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);">
+*/-->
+					<img
+						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
+						th:style="|width: 160px; height: 120px; margin: 5px;position: relative;|">
+					<p></p>
+					<table class="CDetailScriptOfBankImage">
+						<tr>
+							<td>管理ID</td>
+							<td th:text="${entity.imageId}"></td>
+						</tr>
+						<tr>
+							<th>SYM</th>
+							<td
+								th:text="|${entity.symMeaning}(${T(java.lang.Integer).toHexString(entity.sym)})|"></td>
+						</tr>
+						<!-- 						<tr>
+							<th>By</th>
+							<td th:text="${entity.myCallSign}"></td>
+						</tr>
+						<tr>
+							<th>To</th>
+							<td th:text="${entity.destination}"></td>
+						</tr>
+ -->
+						<tr>
+							<th>記述</th>
+							<td th:text="${entity.description}"></td>
+						</tr>
+						<tr>
+							<th>記録</th>
+							<td
+								th:text="${#dates.format(entity.baseDate,'yyyy/MM/dd HH:mm')}"></td>
+						</tr>
+						<!-- 
+						<tr>
+							<th>送信</th>
+							<td
+								th:text="${#dates.format(entity.date2Send,'yyyy/MM/dd HH:mm')}"></td>
+						</tr>
+						<tr>
+							<th>受信</th>
+							<td
+								th:text="${#dates.format(entity.date2Receive,'yyyy/MM/dd HH:mm')}"></td>
+						</tr>
+						 -->
+						<tr>
+							<th>容量</th>
+							<td th:text="|${entity.pictureSize} bytes|"></td>
+						</tr>
+						<tr>
+							<th>File名</th>
+							<td th:text="${entity.fileCoreName}"></td>
+						</tr>
+						<tr>
+							<th>重複</th>
+							<td th:if="${entity.duplicateOf!=null}"
+								th:text="|■${entity.duplicateOf}■|" style="color: red;"></td>
+							<td th:if="${entity.duplicateOf==null}"></td>
+						</tr>
+					</table>
+				</div>
+			</th:block>
+		</th:block>
+		<div style="clear: both;"></div>
+	</div>
+</body>
+</html>

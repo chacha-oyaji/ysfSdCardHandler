@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>3.2.3</version>
+		<relativePath /> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>net.dialectech</groupId>
+	<artifactId>ftmSdCardHandler</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>ftmSdCardHandler</name>
+	<description>Yaesu FTM SD-Card Handler on Spring Boot3</description>
+	<properties>
+		<java.version>21</java.version>
+		<webjarsJQuery.version>3.7.1</webjarsJQuery.version>
+		<webjarsJQueryUI.version>1.13.2</webjarsJQueryUI.version>
+		<webjarsVue.version>2.6.11</webjarsVue.version>
+		<webjarsCookie.version>2.2.1</webjarsCookie.version>
+		<webjarsThreeJs.version>r88</webjarsThreeJs.version>
+		<webjarsMarked.version>4.0.12</webjarsMarked.version>
+		<commons-io.currentVersion>2.11.0</commons-io.currentVersion>
+		<commons-codec.currentVersion>RELEASE200</commons-codec.currentVersion>
+		<im4java.currentVersion>1.4.0</im4java.currentVersion>
+	</properties>
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>jquery</artifactId>
+			<version>${webjarsJQuery.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>jquery-ui</artifactId>
+			<version>${webjarsJQueryUI.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>jquery-ui-themes</artifactId>
+			<version>${webjarsJQueryUI.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>js-cookie</artifactId>
+			<version>${webjarsCookie.version}</version>
+		</dependency>
+		<!--		<dependency>-->
+		<!--			<groupId>org.webjars.npm</groupId>-->
+		<!--			<artifactId>marked</artifactId>-->
+		<!--			<version>${webjarsMarked.version}</version>-->
+		<!--		</dependency>-->
+		<!--		<dependency>-->
+		<!--			<groupId>org.projectlombok</groupId>-->
+		<!--			<artifactId>lombok</artifactId>-->
+		<!--			<optional>true</optional>-->
+		<!--		</dependency>-->
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+			<!--			<version>4.0.1</version>-->
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>${commons-io.currentVersion}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.netbeans.external</groupId>
+			<artifactId>org-apache-commons-codec</artifactId>
+			<version>${commons-codec.currentVersion}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.im4java</groupId>
+			<artifactId>im4java</artifactId>
+			<version>${im4java.currentVersion}</version>
+		</dependency>
+		<!--		<dependency>
+			<groupId>org.eclipse.angus</groupId>
+			<artifactId>angus-mail</artifactId>
+		</dependency>
+-->
+	</dependencies>
+
+	<build>
+		<finalName>ysfSDCardHandler</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</exclude>
+					</excludes>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+
+</project>

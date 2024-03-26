@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta name="viewport" content="width=device-width; initial-scale=1.0" />
+<script th:src="@{/webjars/jquery/3.7.1/jquery.js}"></script>
+<script th:src="@{/webjars/jquery-ui/1.13.2/jquery-ui.js}"></script>
+<script th:src="@{/webjars/js-cookie/2.2.1/js.cookie.js}"></script>
+
+<link
+	th:href="@{/webjars/jquery-ui-themes/1.13.2/ui-lightness/jquery-ui.css}"
+	rel="stylesheet">
+<!--/*  
+<link rel="stylesheet" th:href="@{/css/frontpage.css}" type="text/css" />
+	*/-->
+<style type="text/css">
+/*
+	table format
+*/
+table {
+	border: groove;
+	border-width: 1px;
+	line-height: 1.0em;
+}
+
+table.nrm {
+	border-width: 0px;
+}
+
+th {
+	background-color: #e0e0e0;
+	border-width: 1px;
+	border-bottom-style: solid;
+	text-align: center;
+}
+
+td {
+	background-color: #ffffff;
+	border-width: 1px;
+	border-bottom-style: inset;
+	border-right-style: inset;
+	text-align: center;
+	line-height: 1.0em;
+	color: #008;
+}
+
+td.nrm {
+	background-color: #ffffff;
+	border-width: 1px;
+	border-bottom-style: inset;
+	border-right-style: inset;
+	text-align: left;
+	line-height: 1.0em;
+	color: #008;
+}
+
+td.nrmRight {
+	background-color: #ffffff;
+	border-width: 1px;
+	border-bottom-style: inset;
+	border-right-style: inset;
+	text-align: right;
+	line-height: 1.0em;
+}
+
+td.nrmRefined {
+	background-color: #ffffff;
+	border-width: 1px;
+	border-bottom-style: inset;
+	border-right-style: inset;
+	text-align: left;
+	color: red;
+}
+
+td.nrmBase {
+	border-width: 0px;
+	text-align: left;
+	vertical-align: top;
+	color: #008;
+}
+</style>
+<th:block
+	th:insert="~{js4Spring/general/flowActionGeneral :: javascriptBody}"></th:block>
+<script>
+	$().ready(function() {
+		//submitAndStore2Target("frmTest", "divImageBlock");
+		$('#tabMain').tabs({
+			active : 0
+		});
+	});
+
+	function resetByDetailMode() {
+		var detailMode = $("#cbToggleDetail").prop("checked");
+		if (detailMode == false) {
+			$(".CDetailScriptOfImage").hide();
+		} else {
+			$(".CDetailScriptOfImage").show();
+		}
+	}
+
+	function hideOrShowPseudoDeleted() {
+		var hideMode = $("#cbToggleHidePseudoDeleted").prop("checked");
+		if (hideMode == false) {
+			$(".cDivHideImage").hide();
+		} else {
+			$(".cDivHideImage").show();
+		}
+	}
+
+	function setSliderValueByCookie() {
+		$("#slider4ImageWidth")
+				.slider(
+						{
+							slide : function(event, ui) {
+								$("#imgOnDetailDescription").css("width",
+										ui.value);
+								Cookies.set("sliderValue", ui.value, {
+									expires : 30
+								});
+								$("#divImageWidthValue").text(
+										ui.value + " x "
+												+ Math.round(ui.value * 3 / 4));
+							},
+							value : Cookies.get("sliderValue"),
+							min : 160,// 640の25%が最小幅
+							max : 640
+						});
+		$("#imgOnDetailDescription").css("width", Cookies.get("sliderValue"));
+		$("#divImageWidthValue").text(
+				Cookies.get("sliderValue") + " x "
+						+ Math.round(Cookies.get("sliderValue") * 3 / 4));
+	}
+
+	function showDetailOnThisImage(data, imgUrl) {
+		$("#dlgDetailDialog").dialog("open");
+		$("#tdTxtImageId").text(data.imageId);
+		$("#tdTxtSym").text(data.symMeaning);
+		$("#tdTxtMyCallSign").text(data.myCallSign);
+		$("#tdTxtDestination").text(data.destination);
+		$("#tdTxtDescription").text(data.description);
+		$("#tdTxtBaseDate").text((new Date(data.baseDate)).toLocaleString());
+		$("#tdTxtDate2Send").text((new Date(data.date2Send)).toLocaleString());
+		$("#tdTxtDate2Receive").text(
+				(new Date(data.date2Receive)).toLocaleString());
+		$("#tdTxtPictureSize").text(data.pictureSize);
+		$("#tdTxtFileCoreName").text(data.fileCoreName);
+		$("#tdTxtDuplicateOf").text(data.duplicateOf);
+		// 画像関連詳細情報ダイアログボックス内で既削除画像の場合には復活ボタンを、現存画像の場合には削除ボタンを表示するようになっている。
+		if (data.active) {
+			$("#btnRecoverThis").hide();
+			$("#btnDeleteThis").show();
+			$("#btnDeleteThisCompletely").show();
+			$("#dlgDetailDialog").css("background-color", "#ffc");
+		} else {
+			$("#btnRecoverThis").show();
+			$("#btnDeleteThis").hide();
+			$("#btnDeleteThisCompletely").show();
+			$("#dlgDetailDialog").css("background-color", "#555");
+		}
+		$("#imgOnDetailDescription").attr('src', imgUrl)
+		$("#txtImageIdOfDelete").val(data.imageId);
+		$("#txtImageIdOfDeleteCompletely").val(data.imageId);
+		$("#txtImageIdOfRecover").val(data.imageId);
+	}
+
+	function confirmCompleteDeleteAndExec() {
+		if (window
+				.confirm('*************\n本処理は復活できません。\n*************\nまた、リグの電源再立ち上げが必要になります。\n\n本画像を削除してよいですか？')) {
+			// OKの場面
+			$("#dlgDetailDialog").dialog("close");
+			submitAndStore2Target('frmCompleteDeleteAndExec', 'divImageGallery');
+		}
+		return;
+	}
+
+	function deleteMarking() {
+		$("#dlgDetailDialog").dialog("close");
+		submitAndStore2Target('frmDeleteMarking', 'divImageGallery');
+	}
+
+	function recoverMarking() {
+		$("#dlgDetailDialog").dialog("close");
+		submitAndStore2Target('frmRecoverMarking', 'divImageGallery');
+	}
+
+	function confirmAndCompleteClear() {
+		submitAndStore2Target("frmMove2MemoryAndCompleteClearAllImages",
+				"divImageGallery");
+	}
+
+	function submitShowRecoveryDirContents(targetDirName) {
+		$(".cBranchDirName").val(targetDirName);
+		submitAndStore2Target("frmshowBankDirContents", "divImageListOfBank");
+		$("#divImageListOfBank").show();
+		$("#divRenameOperator").hide();
+	}
+
+	function submitRecallDirContents(targetDirName) {
+		$(".cBranchDirName").val(targetDirName);
+		submitAndStore2Target("frmRecallDirContents", "divImageGallery",
+				"tabMain", 0);
+	}
+
+	function showReNameplain(targetDirName) {
+		$("#divImageListOfBank").hide();
+		$("#divRenameOperator").show();
+		$(".cRenameBranchDirName").val(targetDirName);
+	}
+
+	function submitRenameDir() {
+		if ($("#txtNewBranchDirName").val().trim() == "") {
+			window.alert("変更後の名称が空白になっています。\n「変更後の名称」は、空白以外の文字列を指定してください。");
+			return;
+		}
+		if ($("#txtNewBranchDirName").val().trim() == $(
+				"#txtPresentBranchDirName").val()) {
+			window.alert("変更前と変更後の名称が同じです。\n変更処理は行いません。");
+			return;
+		}
+		submitAndStore2Target("frmRenameOneOfBankDir", "divImageListOfBank");
+	}
+
+	function deleteThisBank(dirName2Delete) {
+		if (window.confirm("「" + dirName2Delete
+				+ "」を削除します。\n復活処理はありません。よろしいですか？")) {
+			$(".cBranchDirName").val(dirName2Delete);
+			submitAndStore2Target("frmDeleteThisBankDir", "divImageListOfBank");
+		}
+		console.log("NO!!!");
+	}
+</script>
+</head>
+<body>
+	<div id="Container">
+		<div style="width: 100%; margin: 0 auto;">
+			<div class="stage">
+				<div
+					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ　Ver. 202403231221
+					<div th:if="${prop.debugMode}"
+						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
+				</div>
+			</div>
+			<div class="stage">
+				<div style="clear: both;" id="tabMain">
+					<ul>
+						<li><a href="#tab1">画像処理</a></li>
+						<li><a href="#tab2">BANK処理</a></li>
+						<li><a href="#tab3">対象設定</a></li>
+					</ul>
+					<div id="tab1">
+						<div
+							style="display: flex; width: 100%; justify-content: center; align-items: center;">
+
+							<button id="btnMountAndLoad"
+								onclick="submitAndStore2Target('frmLoadSDCard','divImageGallery');"
+								style="margin-right: 10px;">MOUNT</button>
+							<div
+								style="background-color: #4c4; color: white; padding: 10px; margin: 5px;">
+								<label style="cursor: pointer;"><input type="checkbox"
+									id="cbToggleDetail" onchange="resetByDetailMode();">副情報</label>
+							</div>
+							<div
+								style="background-color: #44c; color: white; padding: 10px; margin: 5px;">
+								<label style="cursor: pointer;"><input type="checkbox"
+									id="cbToggleHidePseudoDeleted"
+									onchange="hideOrShowPseudoDeleted();">疑似消去表示</label>
+							</div>
+							<form id="frmLoadSDCard" method="post"
+								th:action="@{/execute/mountAndLoadPresentImages}"
+								enctype="multipart/form-data">
+								<input type="hidden" id="txtDriveName1" class="cTxtDriveName"
+									name="sdCardDrive"> <input type="hidden"
+									id="txtRadioId2Send1" class="cTxtRadioId2Send" name="radioId">
+								<input type="hidden" id="txtTopLetterOfPhotoFile1"
+									class="cTxtTopLetterOfPhotoFile" name="topLetterOfPhotoFile">
+								<input type="hidden" id="txtMyCallSign1" class="cTxtMyCallSign"
+									name="myCallSign">
+							</form>
+							<form id="frmUploadNewImages" method="post"
+								th:action="@{/execute/uploadNewImages}"
+								enctype="multipart/form-data">
+								<input type="hidden" id="txtDriveName2" class="cTxtDriveName"
+									name="sdCardDrive"> <input type="hidden"
+									id="txtRadioId2Send2" class="cTxtRadioId2Send" name="radioId">
+								<input type="hidden" id="txtTopLetterOfPhotoFile2"
+									class="cTxtTopLetterOfPhotoFile" name="topLetterOfPhotoFile">
+								<input type="hidden" id="txtMyCallSign2" class="cTxtMyCallSign"
+									name="myCallSign">
+								<div
+									style="background-color: #fdd; padding: 5px; float: left; border: solid 2px #afa; margin: 5px;">
+									<input type="file" draggable="true" multiple="multiple"
+										name="file"></input>
+								</div>
+								<div
+									style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
+									最大容量/画像 <select id="slFileSize" name="volumeTarget">
+										<option th:each="elem : ${prop.maxSizeOfImageMap}"
+											th:selected=" ${elem == prop.maxSizeOfImage}"
+											th:value="${elem.key}" th:text="${elem.value}">
+									</select>
+								</div>
+								<div
+									style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
+									挿入文字列：<input type="text" id="txtSendTo"
+										name="specifiedStn2Send" style="width: 6em;"><select
+										id="slLetterPos" name="posOfSuperImpose"
+										style="margin-left: 5px;">
+										<option th:each="elem : ${prop.positionOfSuperImposeMap}"
+											th:value="${elem.key}" th:text="${elem.value}">
+									</select>
+									<!-- ================================================================================================== -->
+									<!-- SUPER IMPOSEをする際の文字色の指定を限定されたもののなかからするときには、SELECT文のコメントを外し、INPUT文をコメントアウトすること。 -->
+									<!-- ================================================================================================== -->
+									 <input id="color-dialog" type="color" value="#404040" name="specifiedColor">
+									 <!--/*  
+									 <select id="slLetterColor" name="specifiedColor"
+										style="margin-left: 5px;">
+										<option th:each="elem : ${prop.colorSelectionMap}"
+											th:value="${elem.key}" th:text="${elem.value}">
+									</select>
+									 */-->
+								</div>
+							</form>
+							<select name="imageSize">
+								<option value="160">160×120</option>
+								<option value="320" selected>320×240</option>
+							</select>
+							<button style="margin-left: 5px;"
+								onclick="submitAndStore2Target('frmUploadNewImages','divImageGallery');">UPLOAD</button>
+							<form id="frmMove2MemoryAndCompleteClearAllImages" method="post"
+								th:action="@{/execute/move2MemoryAndCompleteClearAllImages}"
+								enctype="multipart/form-data">
+								<button type="button" onclick="confirmAndCompleteClear() ;"
+									style="margin-left: 5px;">Move to BANK</button>
+							</form>
+							<div style="float: left; text-align: center;"></div>
+						</div>
+						<hr />
+						<!--/* ************************** */-->
+						<!--/*  以下の部分に、画像リストを表示する。*/-->
+						<!--/* ************************** */-->
+						<div id="divImageGallery" style=""></div>
+					</div>
+					<div id="tab2">
+						ここでは、バンク記録によってバックアップしたデータを現用データに戻します。操作前に現用データがあればバンクに記録します。
+						<div>
+							<form id="frmShowBankList" method="post"
+								th:action="@{/execute/showBankList}"
+								enctype="multipart/form-data">
+								<button type="button" id="btnShowDirectory4Bank"
+									onclick="$('#txtBankListFrom').val(1);submitAndStore2Target('frmShowBankList','divDirectoryList4Bank');">リスト再取得</button>
+								<input type="hidden" id="txtBankListFrom" name="startFrom">
+								<select name="sortingOrder"
+									onchange="$('#btnShowDirectory4Bank').click();">
+									<option value="timeOrder">時間順（new -> old）</option>
+									<option value="timeReverseOrder">時間逆順（old -> new）</option>
+									<option value="nameOrder">名称順</option>
+									<option value="nameReverseOrder">名称逆順</option>
+								</select>
+							</form>
+						</div>
+						<div id="divDirectoryList4Bank"></div>
+					</div>
+					<div id="tab3">
+						<div style="float: left;">
+							<form id="frmSettlement" method="post"
+								th:action="@{/execute/settleOfProperty}"
+								enctype="multipart/form-data">
+								<table>
+									<tr>
+										<th>項目名</th>
+										<th>設定値</th>
+									</tr>
+									<tr>
+										<th>SDCARD Drive名</th>
+										<td style="text-align: left;"><select id="slSdCardDrive"
+											name="sdCardDrive">
+												<option th:each="elem : ${prop.pcDriveNameMap}"
+													th:text="${elem.value}" th:value="${elem.key}"
+													th:selected="${prop.sdCardDrive == elem.key}">
+										</select></td>
+									</tr>
+									<tr>
+										<th>Radio ID(半角５文字)</th>
+										<td style="text-align: left;"><input type="text"
+											id="txtRadioId" name="radioId" style="width: 6em;"
+											placeholder="対象のSD-CARDを挿入するリグRADIO-IDを記入"
+											th:value="${prop.radioId}"></td>
+									</tr>
+									<tr>
+										<th>呼出符号(半角１０文字以内)</th>
+										<td style="text-align: left;"><input type="text"
+											id="txtMyCallSign" style="width: 10em;" name="myCallSign"
+											th:value="${prop.myCallSign}" placeholder="自局のコールサインを記入"></td>
+									</tr>
+									<tr>
+										<th>ImageMagickの記録場所</th>
+										<td style="text-align: left;"><input type="text"
+											id="txtImageMagickPath" name="imageMagickPath"
+											style="width: 30em;" th:value="${prop.imageMagickPath}"
+											placeholder="対象のSD-CARDを挿入するリグRADIO-IDを記入"></td>
+									</tr>
+									<tr>
+										<th>ブラウザ・プログラム・ファイルのURI</th>
+										<td style="text-align: left;"><input type="text"
+											id="txtBrowserPath" name="browserPath" style="width: 30em;"
+											th:value="${prop.browserPath}"
+											placeholder="対象のSD-CARDを挿入するリグRADIO-IDを記入"></td>
+									</tr>
+									<tr>
+										<th>PHOTO下のファイル名頭文字</th>
+										<td style="text-align: left;"><select
+											id="slTopLetterOfPhotoFile" name="topLetterOfPhotoFile">
+												<option th:each="sel : ${prop.topLetterOfPhotoFileMap}"
+													th:text="${sel.value}"
+													th:selected="${prop.topLetterOfPhotoFile == sel.key}"
+													th:value="${sel.key}"></option>
+										</select></td>
+									</tr>
+									<tr th:if="${prop.debugMode}">
+										<th>DebugMode Directory Offset</th>
+										<td style="text-align: left;"><input type="text"
+											id="txtBrowserPath" name="offset4Debug" style="width: 30em;"
+											th:value="${prop.strOffset4Debug}"
+											placeholder="デバッグモード時のディレクトリ・オフセット"></td>
+									</tr>
+									<tr>
+										<th>PCTDIRデータ中の穴埋値(16進数で指定)</th>
+										<td style="text-align: left;"><select
+											name="strFillByteInPctDir">
+												<option th:each="sel : ${prop.fillByteInPctDirMap}"
+													th:value="${sel.key}" th:text="${sel.value}"
+													th:selected="${prop.strFillByteInPctDir == sel.key}">数値</option>
+										</select> <!--/* 										<input type="text"
+ 											id="txtBrowserPath" name="strFillByteInPctDir"
+ 											style="width: 2em;" th:value="${prop.strFillByteInPctDir}"
+ 											placeholder="PCTDIRデータ中で空白を埋めるバイト値"> */--></td>
+									</tr>
+									<tr>
+										<th>メモリバンクリスト表示行数(10進数で指定)</th>
+										<td style="text-align: left;"><select name="listStepSize">
+												<option th:each="sel : ${prop.listStepSizeMap}"
+													th:text="${sel.value}"
+													th:selected="${prop.listStepSize == sel.key}"
+													th:value="${sel.key}"></option>
+										</select> <!--/*  
+										<input type="text"
+											id="txtListStepSize" name="listStepSize" style="width: 2em;"
+											th:value="${prop.listStepSize}"
+											placeholder="メモリバンクリストを表示する１頁分の行数">行/頁 (10進数で指定)
+										*/--></td>
+									</tr>
+									<tr>
+										<th>設定指示</th>
+										<td style="text-align: left;"><button type="button"
+												id="btnSettleOfProperty" style="background-color: #ccf;"
+												onclick="submitAndStore2Target('frmSettlement','divResOfSettlement');">上記の通りに設定する</button>
+										</td>
+									</tr>
+								</table>
+							</form>
+						</div>
+						<div style="float: left;" id="divResOfSettlement"></div>
+						<br style="clear: both;">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
