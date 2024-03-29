@@ -10,9 +10,9 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.dialectech</groupId>
-	<artifactId>ftmSdCardHandler</artifactId>
+	<artifactId>ysfSdCardHandler</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>ftmSdCardHandler</name>
+	<name>ysfSdCardHandler</name>
 	<description>Yaesu FTM SD-Card Handler on Spring Boot3</description>
 	<properties>
 		<java.version>21</java.version>

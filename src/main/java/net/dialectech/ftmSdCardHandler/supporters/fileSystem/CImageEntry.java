@@ -246,6 +246,12 @@ public class CImageEntry {
 		case 0x00:
 			decodedString = "自登録画像";
 			break;
+		case 0x04:
+			decodedString = "WG（未読）";
+			break;
+		case 0x14:
+			decodedString = "WG（既読）";
+			break;
 		case 0x60:
 			decodedString = "受信（未読）";
 			break;
@@ -360,6 +366,14 @@ public class CImageEntry {
 			// 自作画像
 			decodedString = "solid 3px #0d0";
 			break;
+		case 0x04:
+			// Get from Wires
+			decodedString = "solid 3px #0dd";
+			break;
+		case 0x14:
+			// Get from Wires
+			decodedString = "solid 3px #00d";
+			break;
 		case 0x60:
 			// 受信（未読）
 			decodedString = "solid 3px #0ff";
@@ -394,6 +408,14 @@ public class CImageEntry {
 		case 0x00:
 			// 自作画像
 			decodedString = "#cfc";
+			break;
+		case 0x04:
+			// Get from Wires（未読）
+			decodedString = "#8dd";
+			break;
+		case 0x14:
+			// Get from Wires(既読）
+			decodedString = "#8d8";
 			break;
 		case 0x60:
 			// 受信（未読）
