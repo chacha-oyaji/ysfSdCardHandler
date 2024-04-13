@@ -247,19 +247,39 @@ public class CImageEntry {
 			decodedString = "自登録画像";
 			break;
 		case 0x04:
-			decodedString = "WG（未読）";
+			decodedString = "WD（未）";		// Get From Wires
 			break;
 		case 0x14:
-			decodedString = "WG（既読）";
+			decodedString = "WD（既）";		// Get From Wires
 			break;
+		case 0x05:
+			decodedString = "WU（S）";			// Get From Wires
+			break;
+		case 0x15:
+			decodedString = "WU（F）";			// Get From Wires
+			break;
+			
+		case 0x22:
+			decodedString = "GM受（未）";		// Group Monitor
+			break;
+		case 0x23:
+			decodedString = "GM送（S）";		// Group Monitor
+			break;
+		case 0x32:
+			decodedString = "GM受（既）";		// Group Monitor
+			break;
+		case 0x33:
+			decodedString = "GM送（F）";		// Group Monitor
+			break;
+			
 		case 0x60:
-			decodedString = "受信（未読）";
+			decodedString = "受信（未）";
 			break;
 		case 0x61:
 			decodedString = "既送信（S）";
 			break;
 		case 0x70:
-			decodedString = "受信（既読）";
+			decodedString = "受信（既）";
 			break;
 		case 0x71:
 			decodedString = "既送信（F）";
@@ -367,20 +387,42 @@ public class CImageEntry {
 			decodedString = "solid 3px #0d0";
 			break;
 		case 0x04:
-			// Get from Wires
+			// Wires D/L 未読
 			decodedString = "solid 3px #0dd";
 			break;
 		case 0x14:
-			// Get from Wires
+			// Wires D/L 既読
 			decodedString = "solid 3px #00d";
 			break;
+		case 0x05:
+			// Wires U/L 成功
+			decodedString = "solid 3px #080";	// Get From Wires
+			break;
+		case 0x15:
+			// Wires U/L　失敗
+			decodedString = "solid 3px #080";			// Get From Wires
+			break;
+			
+		case 0x22:
+			decodedString = "solid 3px #0cc";	// Group Monitor GM受（未）
+			break;
+		case 0x23:
+			decodedString = "solid 3px #080";	// Group Monitor 
+			break;
+		case 0x32:
+			decodedString = "solid 3px #080";	// Group Monitor GM受（未）
+			break;
+		case 0x33:
+			decodedString = "solid 3px #080";	// Group Monitor
+			break;
+			
 		case 0x60:
 			// 受信（未読）
 			decodedString = "solid 3px #0ff";
 			break;
 		case 0x61:
 			// 既送信（成功）
-			decodedString = "solid 3px #060";
+			decodedString = "solid 3px #080";
 			break;
 		case 0x70:
 			// 受信（既読）
@@ -388,7 +430,7 @@ public class CImageEntry {
 			break;
 		case 0x71:
 			// 既送信（失敗）
-			decodedString = "solid 3px #870";
+			decodedString = "solid 3px #880";
 			break;
 		default:
 			decodedString = "solid 3px #f44";
@@ -410,13 +452,37 @@ public class CImageEntry {
 			decodedString = "#cfc";
 			break;
 		case 0x04:
-			// Get from Wires（未読）
+			// Wires D/L（未読）
 			decodedString = "#8dd";
 			break;
 		case 0x14:
-			// Get from Wires(既読）
+			// Wires D/L (既読）
 			decodedString = "#8d8";
 			break;
+			
+		case 0x05:
+			// Wires U/L 成功
+			decodedString = "#080";	
+			break;
+		case 0x15:
+			// Wires U/L　失敗
+			decodedString = "#080";
+			break;
+			
+		case 0x22:
+			decodedString = "#8cc";	// GM受信（未読）
+			break;
+		case 0x23:
+			decodedString = "#484";	// GM送信（成功）
+			break;
+		case 0x32:
+			decodedString = "#88C";	// GM受信（既読）
+			break;
+		case 0x33:
+			decodedString = "#846";	// GM送信（失敗）
+			break;
+			
+			
 		case 0x60:
 			// 受信（未読）
 			decodedString = "#cff";
