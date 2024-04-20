@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+	ERROR;
+	<th:block th:each="errorMsg,status : ${errorMessageList}">
+		<p th:text="|${errorMsg}|" style="color: red;"></p>
+	</th:block>
+</body>
+</html>

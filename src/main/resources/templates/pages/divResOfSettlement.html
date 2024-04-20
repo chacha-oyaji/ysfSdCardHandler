@@ -53,8 +53,11 @@
 			</tr>
 			<tr>
 				<th>メモリバンクリスト表示行数</th>
-				<td style="text-align: left;"
-					th:text="${prop.listStepSize}"></td>
+				<td style="text-align: left;" th:text="${prop.listStepSize}"></td>
+			</tr>
+			<tr>
+				<th>標準最大容量/画像<br>（プログラム起動時の設定値）</th>
+				<td style="text-align: left;" th:text="|${prop.maxSizeOfImage}k Bytes|"></td>
 			</tr>
 		</table>
 	</div>

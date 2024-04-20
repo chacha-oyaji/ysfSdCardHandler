@@ -55,7 +55,7 @@ public class CYsfSDCHandlerPropertiesBaseData extends Properties {
 	private int listStepSize = 20;
 	@Getter
 	@Setter
-	private String maxSizeOfImage = "0";
+	private String maxSizeOfImage = "8";
 	@Getter
 	@Setter
 	private String radioId = CConst.defaultRadioId;
@@ -189,7 +189,7 @@ public class CYsfSDCHandlerPropertiesBaseData extends Properties {
 		topLetterOfPhotoFile = this.getProperty("topLetterOfPhotoFile", CConst.defaultTopLetterOfPhotoFile);
 		radioId = this.getProperty("radioId", CConst.defaultRadioId);
 		myCallSign = this.getProperty("myCallSign");
-		maxSizeOfImage = this.getProperty("maxSizeOfImage", "8k");
+		maxSizeOfImage = this.getProperty("maxSizeOfImage", "8");
 		setStrFillByteInPctDir(this.getProperty("fillByteInPctDir", "FF"));
 		listStepSize = Integer.parseInt(this.getProperty("listStepSize", "20"));
 	}

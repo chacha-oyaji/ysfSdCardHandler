@@ -180,7 +180,8 @@
 		request.fail(function(jqXHR, textStatus, errorThrown) {
 			if (jqXHR.status == 0) {
 				$("#" + targetId).html(
-						"<h2>ERROR REPORT</h2> サーバーが落ちた模様です。<br/>"
+						"<h2>ERROR REPORT</h2> サーバーが落ちたか、ファイルアップロードの総容量（400MB）を超過した模様です。<br/>"
+						+ "再度MOUNTしてから、ファイル数を減らしてアップロードしてください。"
 								+ (new Date()).toString());
 				$("#" + targetId).show();
 			} else if (jqXHR.status == 403 || jqXHR.status == 404

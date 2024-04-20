@@ -247,31 +247,31 @@ public class CImageEntry {
 			decodedString = "自登録画像";
 			break;
 		case 0x04:
-			decodedString = "WD（未）";		// Get From Wires
+			decodedString = "WD（未）"; // Get From Wires
 			break;
 		case 0x14:
-			decodedString = "WD（既）";		// Get From Wires
+			decodedString = "WD（既）"; // Get From Wires
 			break;
 		case 0x05:
-			decodedString = "WU（S）";			// Get From Wires
+			decodedString = "WU（S）"; // Get From Wires
 			break;
 		case 0x15:
-			decodedString = "WU（F）";			// Get From Wires
+			decodedString = "WU（F）"; // Get From Wires
 			break;
-			
+
 		case 0x22:
-			decodedString = "GM受（未）";		// Group Monitor
+			decodedString = "GM受（未）"; // Group Monitor
 			break;
 		case 0x23:
-			decodedString = "GM送（S）";		// Group Monitor
+			decodedString = "GM送（S）"; // Group Monitor
 			break;
 		case 0x32:
-			decodedString = "GM受（既）";		// Group Monitor
+			decodedString = "GM受（既）"; // Group Monitor
 			break;
 		case 0x33:
-			decodedString = "GM送（F）";		// Group Monitor
+			decodedString = "GM送（F）"; // Group Monitor
 			break;
-			
+
 		case 0x60:
 			decodedString = "受信（未）";
 			break;
@@ -335,9 +335,9 @@ public class CImageEntry {
 		imageEntry[0x51] = (byte) ((pictureSize >> 16) & 0xff);
 		imageEntry[0x52] = (byte) ((pictureSize >> 8) & 0xff);
 		imageEntry[0x53] = (byte) (pictureSize & 0xff);
-		
+
 		binData = fileCoreName.getBytes(StandardCharsets.UTF_8);
-		binData = fillWithByteOf(binData, (byte) 0xｆｆ, 16);
+		binData = fillWithByteOf(binData, (byte) 0xff, 16);
 		bytes2ByfferPoint(fileCoreName.getBytes(StandardCharsets.UTF_8), 0x54, 16);
 
 		for (int index = 0x64; index <= 0x77; ++index)
@@ -396,26 +396,26 @@ public class CImageEntry {
 			break;
 		case 0x05:
 			// Wires U/L 成功
-			decodedString = "solid 3px #080";	// Get From Wires
+			decodedString = "solid 3px #080"; // Get From Wires
 			break;
 		case 0x15:
-			// Wires U/L　失敗
-			decodedString = "solid 3px #080";			// Get From Wires
+			// Wires U/L 失敗
+			decodedString = "solid 3px #080"; // Get From Wires
 			break;
-			
+
 		case 0x22:
-			decodedString = "solid 3px #0cc";	// Group Monitor GM受（未）
+			decodedString = "solid 3px #0cc"; // Group Monitor GM受（未）
 			break;
 		case 0x23:
-			decodedString = "solid 3px #080";	// Group Monitor 
+			decodedString = "solid 3px #080"; // Group Monitor
 			break;
 		case 0x32:
-			decodedString = "solid 3px #080";	// Group Monitor GM受（未）
+			decodedString = "solid 3px #080"; // Group Monitor GM受（未）
 			break;
 		case 0x33:
-			decodedString = "solid 3px #080";	// Group Monitor
+			decodedString = "solid 3px #080"; // Group Monitor
 			break;
-			
+
 		case 0x60:
 			// 受信（未読）
 			decodedString = "solid 3px #0ff";
@@ -459,30 +459,29 @@ public class CImageEntry {
 			// Wires D/L (既読）
 			decodedString = "#8d8";
 			break;
-			
+
 		case 0x05:
 			// Wires U/L 成功
-			decodedString = "#080";	
-			break;
-		case 0x15:
-			// Wires U/L　失敗
 			decodedString = "#080";
 			break;
-			
+		case 0x15:
+			// Wires U/L 失敗
+			decodedString = "#080";
+			break;
+
 		case 0x22:
-			decodedString = "#8cc";	// GM受信（未読）
+			decodedString = "#8cc"; // GM受信（未読）
 			break;
 		case 0x23:
-			decodedString = "#484";	// GM送信（成功）
+			decodedString = "#484"; // GM送信（成功）
 			break;
 		case 0x32:
-			decodedString = "#88C";	// GM受信（既読）
+			decodedString = "#88C"; // GM受信（既読）
 			break;
 		case 0x33:
-			decodedString = "#846";	// GM送信（失敗）
+			decodedString = "#846"; // GM送信（失敗）
 			break;
-			
-			
+
 		case 0x60:
 			// 受信（未読）
 			decodedString = "#cff";

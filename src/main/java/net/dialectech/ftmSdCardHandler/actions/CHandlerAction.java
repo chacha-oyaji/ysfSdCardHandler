@@ -2,6 +2,7 @@ package net.dialectech.ftmSdCardHandler.actions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -28,7 +29,6 @@ import org.apache.commons.io.FileUtils;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
-import org.im4java.core.ImageMagickCmd;
 import org.im4java.process.ArrayListOutputConsumer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -525,6 +525,13 @@ public class CHandlerAction {
 		return mav;
 	}
 
+	@RequestMapping(value = "error", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataError(@ModelAttribute CData4Upload param, HttpSession session, ModelAndView mav) {
+		mav.addObject("errorMessage", "何らかのエラーが生じました。");
+		mav.setViewName("pages/divErrorOnly");
+		return mav;
+	}
+
 	@RequestMapping(value = "settleOfProperty", method = { RequestMethod.POST, RequestMethod.GET })
 	public ModelAndView actDataSettleOfProperty(@ModelAttribute CData4Upload param, HttpSession session,
 			ModelAndView mav) {
@@ -540,6 +547,8 @@ public class CHandlerAction {
 		prop.setTopLetterOfPhotoFile(param.getTopLetterOfPhotoFile());
 		prop.setStrFillByteInPctDir(param.getStrFillByteInPctDir());
 		prop.setListStepSize(param.getListStepSize());
+		prop.setMaxSizeOfImage(String.valueOf(param.getImageSize()));
+
 		;
 		if (param.getOffset4Debug() != null && !param.getOffset4Debug().equals("")) {
 			prop.setStrOffset4Debug(param.getOffset4Debug());
@@ -728,6 +737,17 @@ public class CHandlerAction {
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
 		}
+		
+		// ImageMagickの存否チェック
+		String imageMagickPathName4Check = prop.getImageMagickPath();
+		File imProcessFile = new File(imageMagickPathName4Check+"convert.exe") ;
+		if (!imProcessFile.exists()) {
+			errorMessageList.add("ImageMagickの指定場所に処理プログラムが見つかりません。");
+			errorMessageList.add("「対象設定」タブ中の「ImageMagickの記録場所」の指定を確認してください。");
+			errorMessageList.add("ImageMagickの記録場所はフォルダを指定するので、末尾が'\\'で終わる必要があります。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
 
 		String radioId = prop.getRadioId();
 
@@ -770,14 +790,14 @@ public class CHandlerAction {
 
 					String targetDirName = prop.getStrPhotoDirectoryPath();
 
-					//					File fileWorkingDir = new File(prop.getStrFileWorkingDirectoryPath());
-					//					if (!fileWorkingDir.exists()) {
-					//						FileUtils.forceMkdir(fileWorkingDir);
-					//					}
+					// File fileWorkingDir = new File(prop.getStrFileWorkingDirectoryPath());
+					// if (!fileWorkingDir.exists()) {
+					// FileUtils.forceMkdir(fileWorkingDir);
+					// }
 					Path newPath = Paths.get(targetDirName, ie.getFileCoreName());
 
-					//  commandの生成
-					//ImageMagickCmd cmd = new ImageMagickCmd("magick");
+					// commandの生成
+					// ImageMagickCmd cmd = new ImageMagickCmd("magick");
 					ConvertCmd cmd = new ConvertCmd();
 					cmd.setAsyncMode(false);
 					String imageMagickPathName = prop.getImageMagickPath();
@@ -859,10 +879,13 @@ public class CHandlerAction {
 					cmd.setOutputConsumer(output);
 					// execute the operation
 					long startTime = System.currentTimeMillis();
+					boolean foundErrorOnImageMagick = false;
 					try {
 						cmd.run(op);
-					} catch (InterruptedException | IM4JavaException e) {
+					} catch (InterruptedException e) {
 						// TODO 自動生成された catch ブロック
+						e.printStackTrace();
+					} catch (IM4JavaException e) {
 						e.printStackTrace();
 					}
 					output.getOutput(); // 処理終了待ちのための空読み。

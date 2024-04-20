@@ -237,7 +237,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ　Ver. 202403231221
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202404200954
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
@@ -297,7 +297,7 @@ td.nrmBase {
 									style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
 									最大容量/画像 <select id="slFileSize" name="volumeTarget">
 										<option th:each="elem : ${prop.maxSizeOfImageMap}"
-											th:selected=" ${elem == prop.maxSizeOfImage}"
+											th:selected=" ${elem.key == prop.maxSizeOfImage}"
 											th:value="${elem.key}" th:text="${elem.value}">
 									</select>
 								</div>
@@ -313,8 +313,9 @@ td.nrmBase {
 									<!-- ================================================================================================== -->
 									<!-- SUPER IMPOSEをする際の文字色の指定を限定されたもののなかからするときには、SELECT文のコメントを外し、INPUT文をコメントアウトすること。 -->
 									<!-- ================================================================================================== -->
-									 <input id="color-dialog" type="color" value="#404040" name="specifiedColor">
-									 <!--/*  
+									<input id="color-dialog" type="color" value="#404040"
+										name="specifiedColor">
+									<!--/*  
 									 <select id="slLetterColor" name="specifiedColor"
 										style="margin-left: 5px;">
 										<option th:each="elem : ${prop.colorSelectionMap}"
@@ -446,6 +447,19 @@ td.nrmBase {
 													th:selected="${prop.listStepSize == sel.key}"
 													th:value="${sel.key}"></option>
 										</select> <!--/*  
+										<input type="text"
+											id="txtListStepSize" name="listStepSize" style="width: 2em;"
+											th:value="${prop.listStepSize}"
+											placeholder="メモリバンクリストを表示する１頁分の行数">行/頁 (10進数で指定)
+										*/--></td>
+									</tr>
+									<tr>
+										<th>標準最大容量</th>
+										<td style="text-align: left;"> <select id="slFileSize" name="imageSize">
+										<option th:each="elem : ${prop.maxSizeOfImageMap}"
+											th:selected=" ${elem.key == prop.maxSizeOfImage}"
+											th:value="${elem.key}" th:text="${elem.value}">
+									</select><!--/*  
 										<input type="text"
 											id="txtListStepSize" name="listStepSize" style="width: 2em;"
 											th:value="${prop.listStepSize}"
