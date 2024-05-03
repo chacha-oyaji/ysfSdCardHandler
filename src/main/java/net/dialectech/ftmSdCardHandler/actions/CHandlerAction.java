@@ -2,7 +2,6 @@ package net.dialectech.ftmSdCardHandler.actions;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -38,6 +37,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import org.thymeleaf.util.StringUtils;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.Getter;
@@ -737,10 +737,10 @@ public class CHandlerAction {
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
 		}
-		
+
 		// ImageMagickの存否チェック
 		String imageMagickPathName4Check = prop.getImageMagickPath();
-		File imProcessFile = new File(imageMagickPathName4Check+"convert.exe") ;
+		File imProcessFile = new File(imageMagickPathName4Check + "convert.exe");
 		if (!imProcessFile.exists()) {
 			errorMessageList.add("ImageMagickの指定場所に処理プログラムが見つかりません。");
 			errorMessageList.add("「対象設定」タブ中の「ImageMagickの記録場所」の指定を確認してください。");
@@ -821,7 +821,9 @@ public class CHandlerAction {
 
 					if (specifiedStationName2Send != null && !specifiedStationName2Send.trim().equals("")) {
 						// 相手局名追加（）
+						specifiedStationName2Send = StringUtils.escapeJava(specifiedStationName2Send);
 						System.out.print(">> Imposing : \"" + specifiedStationName2Send + " : ");
+
 						String letters = specifiedStationName2Send;
 						int fontSize = 640 / (letters.length() + 2); // なぜか、320ではなくその倍でちょうど狙ったあたりになる。
 						// font サイズの最大値は36にしておく。
