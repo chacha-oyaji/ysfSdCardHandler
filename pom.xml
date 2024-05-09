@@ -25,6 +25,7 @@
 		<commons-io.currentVersion>2.11.0</commons-io.currentVersion>
 		<commons-codec.currentVersion>RELEASE200</commons-codec.currentVersion>
 		<im4java.currentVersion>1.4.0</im4java.currentVersion>
+		<com.google.zxing.currentVersion>3.5.3</com.google.zxing.currentVersion>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -98,11 +99,11 @@
 			<artifactId>im4java</artifactId>
 			<version>${im4java.currentVersion}</version>
 		</dependency>
-		<!--		<dependency>
-			<groupId>org.eclipse.angus</groupId>
-			<artifactId>angus-mail</artifactId>
-		</dependency>
--->
+		    <dependency>
+    	<groupId>com.google.zxing</groupId>
+    	<artifactId>javase</artifactId>
+    	<version>${com.google.zxing.currentVersion}</version>
+    </dependency>
 	</dependencies>
 
 	<build>

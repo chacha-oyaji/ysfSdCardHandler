@@ -88,6 +88,11 @@ td.nrmBase {
 		$('#tabMain').tabs({
 			active : 0
 		});
+		$("#dlgQRCodeInputDialog").dialog({
+			autoOpen : false,
+			minWidth : 680,
+			minHeight : 300
+		});
 	});
 
 	function resetByDetailMode() {
@@ -232,12 +237,42 @@ td.nrmBase {
 </script>
 </head>
 <body>
+
+	<div id="dlgQRCodeInputDialog" title="QRコード入力" style="display: none;">
+		<form id="frmQRCodeUpload" method="post"
+			th:action="@{/execute/createQRCodeAndLoadPresentImages}"
+			enctype="multipart/form-data">
+			<h2>QRコードに変換する文字列</h2>
+			<textarea id="taQRInfo" name="strQRCode"
+				style="width: 640px; height: 8em;"></textarea>
+			<br />
+			<div
+				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
+				最大容量/画像 <select id="slFileSize4QR" name="volumeTarget">
+					<option th:each="elem : ${prop.maxSizeOfImageMap}"
+						th:selected=" ${elem.key == prop.maxSizeOfImage}"
+						th:value="${elem.key}" th:text="${elem.value}">
+				</select> <select name="imageSize">
+					<option value="160">160×120</option>
+					<option value="320" selected>320×240</option>
+				</select>
+			</div>
+			<div
+				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
+				<button type="button" onclick="$('#taQRInfo').val('');">電文削除</button>
+				<button type="button"
+					onclick="submitAndStore2Target('frmQRCodeUpload','divImageGallery');$('#dlgQRCodeInputDialog').dialog('close');">Convert
+					and Upload</button>
+			</div>
+		</form>
+	</div>
+
 	<div id="Container">
 		<div style="width: 100%; margin: 0 auto;">
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405040643
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405090945
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
@@ -253,9 +288,15 @@ td.nrmBase {
 						<div
 							style="display: flex; width: 100%; justify-content: center; align-items: center;">
 
-							<button id="btnMountAndLoad"
-								onclick="submitAndStore2Target('frmLoadSDCard','divImageGallery');"
-								style="margin-right: 10px;">MOUNT</button>
+							<div>
+								<button id="btnMountAndLoad"
+									onclick="submitAndStore2Target('frmLoadSDCard','divImageGallery');"
+									style="margin-right: 10px;">MOUNT</button>
+								<br />
+								<button id="btnOpenQRCodeInputDialog"
+									onclick="$('#dlgQRCodeInputDialog').dialog('open');"
+									style="margin-right: 10px;">QR入力</button>
+							</div>
 							<div
 								style="background-color: #4c4; color: white; padding: 10px; margin: 5px;">
 								<label style="cursor: pointer;"><input type="checkbox"
@@ -455,11 +496,12 @@ td.nrmBase {
 									</tr>
 									<tr>
 										<th>標準最大容量</th>
-										<td style="text-align: left;"> <select id="slFileSize" name="imageSize">
-										<option th:each="elem : ${prop.maxSizeOfImageMap}"
-											th:selected=" ${elem.key == prop.maxSizeOfImage}"
-											th:value="${elem.key}" th:text="${elem.value}">
-									</select><!--/*  
+										<td style="text-align: left;"><select id="slFileSize"
+											name="imageSize">
+												<option th:each="elem : ${prop.maxSizeOfImageMap}"
+													th:selected=" ${elem.key == prop.maxSizeOfImage}"
+													th:value="${elem.key}" th:text="${elem.value}">
+										</select> <!--/*  
 										<input type="text"
 											id="txtListStepSize" name="listStepSize" style="width: 2em;"
 											th:value="${prop.listStepSize}"

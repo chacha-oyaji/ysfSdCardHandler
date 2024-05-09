@@ -1,5 +1,6 @@
 package net.dialectech.ftmSdCardHandler.actions;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,12 +18,15 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FileUtils;
 import org.im4java.core.ConvertCmd;
@@ -53,6 +57,14 @@ import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltSpringFileSt
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CImageEntry;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystemCorePart;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
 @Controller
 @RequestScope
@@ -722,6 +734,272 @@ public class CHandlerAction {
 		mav.addObject("targetPosList", targetPosList);
 		mav.addObject("dirStructureList", dirStructureList);
 		return mav;
+	}
+
+	/**
+	 * QRコード生成リクエストへのレスポンス
+	 * 
+	 * @param params
+	 * @param session
+	 * @param mav
+	 * @return
+	 */
+	@RequestMapping(value = "createQRCodeAndLoadPresentImages", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataCreateQRCodeAndLoadPresentImages(@ModelAttribute CData4Upload params,
+			HttpSession session, ModelAndView mav) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			fs.clearAll();
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+
+		if (params.getStrQRCode() == null || params.getStrQRCode().equals("")) {
+			errorMessageList.add("QRコードに変換する文字列が指定されていません。");
+			fs.clearAll();
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+
+		// ImageMagickの存否チェック
+		String imageMagickPathName4Check = prop.getImageMagickPath();
+		File imProcessFile = new File(imageMagickPathName4Check + "convert.exe");
+		if (!imProcessFile.exists()) {
+			errorMessageList.add("ImageMagickの指定場所に処理プログラムが見つかりません。");
+			errorMessageList.add("「対象設定」タブ中の「ImageMagickの記録場所」の指定を確認してください。");
+			errorMessageList.add("ImageMagickの記録場所はフォルダを指定するので、末尾が'\\'で終わる必要があります。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+
+		String radioId = prop.getRadioId();
+
+		File[] inFiles = new File[1];
+		inFiles[0] = new File("c:\\Temp\\YSF_QRCode4Generation.jpg");
+
+		// radioIdについてのチェック
+		if (radioId == null || radioId.equals("")) {
+			errorMessageList.add("RadioIdが指定されていません。");
+		} else if (radioId.length() != 5) {
+			errorMessageList.add("RadioIdが5桁ではありません。");
+		}
+
+		if (errorMessageList.size() != 0) {
+			setAllParameters4Mav(mav, errorMessageList, getPresentUsingBranchName4Display(), fs, "ERROR", prop,
+					"pages/divImages");
+			return mav;
+		}
+
+		if (!fs.isActive()) {
+			errorMessageList.add("先にMOUNT/LOAD機能を使って、SDカードの設定を確認してください。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+
+		// ここまで来て、準備が出来上がったので、いよいよ具体的な処理を開始する。
+		// まずは、QRコードの変換を行う。
+
+		try {
+			BarcodeFormat format = BarcodeFormat.QR_CODE;
+			int width;
+			int height;
+			switch (params.getImageSize()) {
+			case 160:
+				width = 160;
+				height = 120;
+				break;
+			case 320:
+			default:
+				width = 320;
+				height = 240;
+				break;
+			}
+
+			Hashtable<EncodeHintType, Object> hints = new Hashtable<EncodeHintType, Object>();
+			hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
+			hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
+
+			QRCodeWriter writer = new QRCodeWriter();
+			String source = new String(params.getStrQRCode().getBytes());
+			BitMatrix bitMatrix = writer.encode(source, format, width, height, hints);
+			BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
+			ImageIO.write(image, "jpg", inFiles[0]);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (WriterException e) {
+			e.printStackTrace();
+		}
+
+		convertTempFilesAndStore2Traget(inFiles, params.getVolumeTarget(), params.getImageSize(), "", 8 // 下左詰
+				, "#000");
+
+		fs.saveAll(errorMessageList);
+		fs.reNumberAndPrepareForDisplay();
+
+		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
+				"pages/divImages");
+		return mav;
+	}
+
+	private void convertTempFilesAndStore2Traget(File[] inFiles, String volumeTarget, int imageSize,
+			String specifiedStationName2Send, int posOfSuperImpose, String specifiedColor) {
+
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+
+		LinkedList<String> inFilesList = new LinkedList<String>();
+		for (int index = 0; index < inFiles.length; ++index) {
+			try {
+				String inAbsoluteName = "c:\\Temp\\" + inFiles[index].getName();
+				inFilesList.add(inAbsoluteName);
+				CImageEntry ie = fs.addNewFile(prop.getMyCallSign());
+
+				String targetDirName = prop.getStrPhotoDirectoryPath();
+
+				// File fileWorkingDir = new File(prop.getStrFileWorkingDirectoryPath());
+				// if (!fileWorkingDir.exists()) {
+				// FileUtils.forceMkdir(fileWorkingDir);
+				// }
+				Path newPath = Paths.get(targetDirName, ie.getFileCoreName());
+
+				// commandの生成
+				// ImageMagickCmd cmd = new ImageMagickCmd("magick");
+				ConvertCmd cmd = new ConvertCmd();
+				cmd.setAsyncMode(false);
+				String imageMagickPathName = prop.getImageMagickPath();
+
+				cmd.setSearchPath(imageMagickPathName);
+				// operation内容の生成。
+				IMOperation op = new IMOperation();
+				op.addImage(inAbsoluteName);
+				// 出力ファイルはJPEG
+				op.define("jpeg:extent=" + volumeTarget.trim() + "kB");
+				// 大きさを正規化
+				switch (imageSize) {
+				case 160:
+					op.resize(160, 120, '!');
+					break;
+				case 320:
+				default:
+					op.resize(320, 240, '!');
+					break;
+				}
+
+				if (specifiedStationName2Send != null && !specifiedStationName2Send.trim().equals("")) {
+					// 相手局名追加（）
+					specifiedStationName2Send = StringUtils.escapeJava(specifiedStationName2Send);
+					System.out.print(">> Imposing : \"" + specifiedStationName2Send + " : ");
+
+					String letters = specifiedStationName2Send;
+					int fontSize = 640 / (letters.length() + 2); // なぜか、320ではなくその倍でちょうど狙ったあたりになる。
+					// font サイズの最大値は36にしておく。
+					if (fontSize > 36)
+						fontSize = 36;
+					op.pointsize(fontSize);
+
+					int startXOfBackground = 0;
+					int startYOfBackground = fontSize;
+					int startXOfLetter = 1;
+					int startYOfLetter = fontSize + 1;
+					int fullLengthOfLetters = fontSize * letters.length() / 2;
+					int offsetX = 0;
+					int offsetY = 0;
+					switch (posOfSuperImpose) {
+					case 0: // 上左詰
+						offsetX = 0;
+						offsetY = 0;
+						break;
+					case 1: // 上中央
+						offsetX = (320 - fullLengthOfLetters) / 2;
+						offsetY = 0;
+						break;
+					case 2: // 上右詰
+						offsetX = (320 - fullLengthOfLetters) - fontSize / 2;
+						offsetY = 0;
+						break;
+					case 8: // 下左詰
+						offsetX = 0;
+						offsetY = 235 - fontSize;
+						break;
+					case 9: // 下中央
+						offsetX = (320 - fullLengthOfLetters) / 2;
+						offsetY = 235 - fontSize;
+						break;
+					case 10: // 下右詰
+					default:
+						offsetX = (320 - fullLengthOfLetters) - fontSize / 2;
+						offsetY = 235 - fontSize;
+						break;
+					}
+					op.font("Times-New-Roman"); // font
+					op.fill("white"); // font color
+					op.draw("text " + (startXOfBackground + offsetX) + "," + (startYOfBackground + offsetY) + " '"
+							+ letters + "'");
+					op.fill(specifiedColor); // font color
+					op.draw("text " + (startXOfLetter + offsetX) + "," + (startYOfLetter + offsetY) + " '" + letters
+							+ "'"); // location of text, actual text
+				}
+				// 余計なメタタグを削除
+				op.strip();
+				op.addImage(newPath.toString());
+
+				ArrayListOutputConsumer output = new ArrayListOutputConsumer();
+				cmd.setOutputConsumer(output);
+				// execute the operation
+				long startTime = System.currentTimeMillis();
+				boolean foundErrorOnImageMagick = false;
+				try {
+					cmd.run(op);
+				} catch (InterruptedException e) {
+					// TODO 自動生成された catch ブロック
+					e.printStackTrace();
+				} catch (IM4JavaException e) {
+					e.printStackTrace();
+				}
+				output.getOutput(); // 処理終了待ちのための空読み。
+				long processTime = System.currentTimeMillis() - startTime;
+				System.out.print(" Conversion complete (" + processTime + " mS) >> ");
+				long fileSize = newPath.toFile().length();
+				ie.setPictureSize((int) (fileSize & 0xffffff));
+				ie.setActive(true);
+
+				// 先頭コールサインの抽出
+				String hisCall = "ALL";
+				Pattern pattern = Pattern.compile("[0-9a-zA-Z\\/]+", Pattern.DOTALL);
+				Matcher matcher = pattern.matcher(specifiedStationName2Send);
+				try {
+					if (matcher.find()) {
+						hisCall = matcher.group();
+						if (hisCall.toUpperCase().trim().equals("CQ"))
+							hisCall = "ALL";
+					}
+				} catch (Exception e) {
+					// hisCall = "ALL"のままとする。
+				}
+				ie.setDestination(hisCall);
+				ie.setRealFileExists(true);
+				ie.storeOwnData2BufferedBytes();
+				System.out.println("Registered as " + newPath.toFile().toString());
+
+			} catch (Exception e) {
+				// TODO 自動生成された catch ブロック
+				e.printStackTrace();
+			}
+		}
+		// 元の一時ファイルは削除してよい。
+		for (String absFileName : inFilesList) {
+			try {
+				System.out.println("DELETING >" + absFileName);
+				FileUtils.forceDelete(new File(absFileName));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+
 	}
 
 	@RequestMapping(value = "uploadNewImages", method = { RequestMethod.POST, RequestMethod.GET })

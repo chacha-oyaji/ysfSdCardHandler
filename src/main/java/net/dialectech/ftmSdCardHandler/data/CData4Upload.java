@@ -70,7 +70,10 @@ public class CData4Upload extends CDltSimpleFileHandler {
 	private String strFillByteInPctDir;
 	@Getter
 	@Setter
-	private int imageSize ;
+	private String strQRCode;
+	@Getter
+	@Setter
+	private int imageSize;
 
 	// 以下はshowBankListリクエストにおいて使用される。
 	@Getter
