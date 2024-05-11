@@ -3,6 +3,7 @@ package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
 import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
+import org.apache.commons.text.StringEscapeUtils;
 
 import jakarta.xml.bind.DatatypeConverter;
 
@@ -55,6 +56,9 @@ public class CImageEntry {
 	@Getter
 	@Setter
 	private String description = ""; // 必ず１６文字
+	@Getter
+	@Setter
+	private String qrString = ""; // QRコード内部
 	@Getter
 	private int pictureSize; // このうち4bytesがDIRに記録される。
 	@Getter
@@ -154,6 +158,21 @@ public class CImageEntry {
 
 	public int getNumberPartOfFileName() {
 		return getNumberPartOfFileName(fileCoreName);
+	}
+
+	public String getQrStringHtml() {
+		if (qrString==null) 
+			return null ;
+		String htmlConverted = StringEscapeUtils.escapeHtml4(qrString).replaceAll("\n", "<br>\n").replaceAll(" ",
+				"&nbsp;");
+		return htmlConverted;
+	}
+
+	public String getQrStringEscaped() {
+		if (qrString==null)
+			return null ;
+		String htmlConverted = StringEscapeUtils.escapeHtml4(qrString);
+		return htmlConverted;
 	}
 
 	/**

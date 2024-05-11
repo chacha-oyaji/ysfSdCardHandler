@@ -23,6 +23,7 @@
 		<webjarsThreeJs.version>r88</webjarsThreeJs.version>
 		<webjarsMarked.version>4.0.12</webjarsMarked.version>
 		<commons-io.currentVersion>2.11.0</commons-io.currentVersion>
+		<commons-text.currentVersion>1.1</commons-text.currentVersion>
 		<commons-codec.currentVersion>RELEASE200</commons-codec.currentVersion>
 		<im4java.currentVersion>1.4.0</im4java.currentVersion>
 		<com.google.zxing.currentVersion>3.5.3</com.google.zxing.currentVersion>
@@ -90,6 +91,11 @@
 			<version>${commons-io.currentVersion}</version>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-text</artifactId>
+			<version>${commons-text.currentVersion}</version>
+		</dependency>
+		<dependency>
 			<groupId>org.netbeans.external</groupId>
 			<artifactId>org-apache-commons-codec</artifactId>
 			<version>${commons-codec.currentVersion}</version>
@@ -99,11 +105,11 @@
 			<artifactId>im4java</artifactId>
 			<version>${im4java.currentVersion}</version>
 		</dependency>
-		    <dependency>
-    	<groupId>com.google.zxing</groupId>
-    	<artifactId>javase</artifactId>
-    	<version>${com.google.zxing.currentVersion}</version>
-    </dependency>
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>${com.google.zxing.currentVersion}</version>
+		</dependency>
 	</dependencies>
 
 	<build>

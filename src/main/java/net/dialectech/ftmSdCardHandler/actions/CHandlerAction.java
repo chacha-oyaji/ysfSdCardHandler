@@ -3,6 +3,7 @@ package net.dialectech.ftmSdCardHandler.actions;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -59,10 +60,22 @@ import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystemCorePart;
 
 import com.google.zxing.BarcodeFormat;
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.ChecksumException;
+import com.google.zxing.DecodeHintType;
 import com.google.zxing.EncodeHintType;
+import com.google.zxing.FormatException;
+import com.google.zxing.LuminanceSource;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.NotFoundException;
+import com.google.zxing.Reader;
+import com.google.zxing.Result;
 import com.google.zxing.WriterException;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.client.j2se.MatrixToImageWriter;
 import com.google.zxing.common.BitMatrix;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.multi.GenericMultipleBarcodeReader;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
@@ -316,6 +329,7 @@ public class CHandlerAction {
 		}
 
 		fs.setActive(true);
+		// 現時点でのSD-CARD上の画像情報はFileSystem:fsにあるから、そのままThymeleafに渡す。
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		return mav;
@@ -779,7 +793,8 @@ public class CHandlerAction {
 		String radioId = prop.getRadioId();
 
 		File[] inFiles = new File[1];
-		inFiles[0] = new File("c:\\Temp\\YSF_QRCode4Generation.jpg");
+		String tempFileNameOfQRCode = "c:\\Temp\\" + "YSF_QRCode4Generation.jpg";
+		inFiles[0] = new File(tempFileNameOfQRCode);
 
 		// radioIdについてのチェック
 		if (radioId == null || radioId.equals("")) {
@@ -833,8 +848,9 @@ public class CHandlerAction {
 		} catch (WriterException e) {
 			e.printStackTrace();
 		}
+		String qrCodeAfterRead = fs.analyzeQRCode(tempFileNameOfQRCode);
 
-		convertTempFilesAndStore2Traget(inFiles, params.getVolumeTarget(), params.getImageSize(), "", 8 // 下左詰
+		convertTempFilesAndStore2Target(inFiles, params, qrCodeAfterRead, "", 8 // 下左詰
 				, "#000");
 
 		fs.saveAll(errorMessageList);
@@ -845,8 +861,11 @@ public class CHandlerAction {
 		return mav;
 	}
 
-	private void convertTempFilesAndStore2Traget(File[] inFiles, String volumeTarget, int imageSize,
+	private void convertTempFilesAndStore2Target(File[] inFiles, CData4Upload params, String qrCodeAfterRead,
 			String specifiedStationName2Send, int posOfSuperImpose, String specifiedColor) {
+
+		String volumeTarget = params.getVolumeTarget();
+		int imageSize = params.getImageSize();
 
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
@@ -860,10 +879,6 @@ public class CHandlerAction {
 
 				String targetDirName = prop.getStrPhotoDirectoryPath();
 
-				// File fileWorkingDir = new File(prop.getStrFileWorkingDirectoryPath());
-				// if (!fileWorkingDir.exists()) {
-				// FileUtils.forceMkdir(fileWorkingDir);
-				// }
 				Path newPath = Paths.get(targetDirName, ie.getFileCoreName());
 
 				// commandの生成
@@ -951,7 +966,6 @@ public class CHandlerAction {
 				cmd.setOutputConsumer(output);
 				// execute the operation
 				long startTime = System.currentTimeMillis();
-				boolean foundErrorOnImageMagick = false;
 				try {
 					cmd.run(op);
 				} catch (InterruptedException e) {
@@ -983,6 +997,7 @@ public class CHandlerAction {
 				ie.setDestination(hisCall);
 				ie.setRealFileExists(true);
 				ie.storeOwnData2BufferedBytes();
+				ie.setQrString(qrCodeAfterRead);
 				System.out.println("Registered as " + newPath.toFile().toString());
 
 			} catch (Exception e) {

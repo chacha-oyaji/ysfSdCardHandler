@@ -1,5 +1,6 @@
 package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -10,14 +11,29 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.ChecksumException;
+import com.google.zxing.DecodeHintType;
+import com.google.zxing.FormatException;
+import com.google.zxing.LuminanceSource;
+import com.google.zxing.MultiFormatReader;
+import com.google.zxing.NotFoundException;
+import com.google.zxing.Reader;
+import com.google.zxing.Result;
+import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
+import com.google.zxing.common.HybridBinarizer;
 
 import lombok.Getter;
 import lombok.Setter;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
+import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
+import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltImageIO;
 
 public class CYsfFileSystemCorePart {
 
@@ -245,6 +261,8 @@ public class CYsfFileSystemCorePart {
 		if (includedFileList != null) {
 			for (CImageEntry pctDir : pctDirList) {
 				pctDir.setRealFileExists(false);
+				String fileName = prop.getSdCardBaseDirName() + "PHOTO" + File.separator + pctDir.getFileCoreName();
+				pctDir.setQrString(analyzeQRCode(fileName));
 				for (File f : includedFileList) {
 					if (f.getName().equals(pctDir.getFileCoreName())) {
 						pctDir.setRealFileExists(true);
@@ -260,6 +278,27 @@ public class CYsfFileSystemCorePart {
 
 		reNumberAndPrepareForDisplay();
 		return null;
+	}
+
+	public String analyzeQRCode(String partBim) {
+		Hashtable<DecodeHintType, Object> decodeHints = new Hashtable<DecodeHintType, Object>();
+		decodeHints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
+		BufferedImage image;
+		String context ;
+		try (FileInputStream fileInputStream = new FileInputStream(partBim);) {
+			CDltImageIO imageHandler = CDltImageIO.getInstance();
+			image = imageHandler.readInputStream2BufferedImage(fileInputStream);
+			// image = ImageIO.read(sourceFile[0]);
+			LuminanceSource source = new BufferedImageLuminanceSource(image);
+			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+			Reader reader = new MultiFormatReader();
+			Result decodeResult = reader.decode(bitmap);
+			context = decodeResult.getText();
+		} catch (FormatException | IOException | NotFoundException | ChecksumException | CDltFlowsException e) {
+			e.printStackTrace();
+			return null;
+		}
+		return context;
 	}
 
 	public String loadFromTargetBankDirFiles(String sourceDirectory) {
@@ -339,7 +378,7 @@ public class CYsfFileSystemCorePart {
 
 		// PHOTOディレクトリ内にあるファイル群とｐｃｒDirListとの間の整合性チェック。
 		File[] includedFileList;
-		
+
 		includedFileList = new File(sourceDirectory).listFiles();
 		if (includedFileList != null) {
 			for (CImageEntry pctDir : pctDirList) {
@@ -379,15 +418,15 @@ public class CYsfFileSystemCorePart {
 
 	public void removeThis(CImageEntry data) {
 		for (CImageEntry d : pctDirList) {
-			if (d==data) {
+			if (d == data) {
 				pctDirList.remove(data);
-				break ;
+				break;
 			}
 		}
 		for (CImageEntry d : pctDirListWithDisplayOrder) {
-			if (d==data) {
+			if (d == data) {
 				pctDirListWithDisplayOrder.remove(data);
-				break ;
+				break;
 			}
 		}
 	}
@@ -444,7 +483,6 @@ public class CYsfFileSystemCorePart {
 		// 重複管理のマーキングをする。
 		markDuplicateFileHandling();
 	}
-	
 
 	public void saveAll(LinkedList<String> errorMessageList) {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();

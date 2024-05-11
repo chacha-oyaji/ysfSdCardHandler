@@ -22,11 +22,13 @@
 		errorMsg = /*[[${errorMessageList}]]*/Found_errorMessage
 		if (errorMsg != "") {
 			// エラーがあったときにはこちらが実行されます。
-		}
-		else {
+		} else {
 			$("#btnShowDirectory4Bank").click();
 		}
 	});
+	function showFullQRString(strData) {
+		alert(strData);
+	}
 </script>
 </head>
 <body>
@@ -47,7 +49,7 @@
 	</form>
 	<div id="dlgDetailDialog" title="画像関連詳細情報">
 		<div
-			style="width: 156px; float: left; cursor: pointer; background-color: #fdc; text-align: center;border-radius:8px;border:solid 2px #888;"
+			style="width: 156px; float: left; cursor: pointer; background-color: #fdc; text-align: center; border-radius: 8px; border: solid 2px #888;"
 			id="divImageWidthValue"
 			ondblclick="Cookies.set('sliderValue', 320, {expires: 30}); setSliderValueByCookie();"
 			onclick="Cookies.set('sliderValue', 160, {expires: 30}); setSliderValueByCookie();"></div>
@@ -57,13 +59,14 @@
 		<div style="clear: both;">
 			<img id="imgOnDetailDescription" style="width: 320px;">
 		</div>
-		<table>
+		<table style="width: 100%;">
 			<tr>
 				<!--/*  javascript　関数showDetailOnThisImage()内でどちらかのボタンのみが表示されるようになっている。*/-->
-				<th>操作指示</th>
+				<th style="width: 6em;">操作指示</th>
 				<td><button id="btnDeleteThis" style="background-color: pink;"
 						onclick="deleteMarking() ;">削除扱い保存</button>
-					<button id="btnDeleteThisCompletely" style="background-color: #f66;"
+					<button id="btnDeleteThisCompletely"
+						style="background-color: #f66;"
 						onclick="confirmCompleteDeleteAndExec();">完全削除</button>
 					<button id="btnRecoverThis" style="background-color: #8f8;"
 						onclick="recoverMarking();">復活</button></td>
@@ -114,17 +117,22 @@
 				<th>F重複性</th>
 				<td><div id="tdTxtDuplicateOf"></div></td>
 			</tr>
-
+			<tr>
+				<th>QR文字列</th>
+				<td><div id="tdTxtQRStringHtml"
+						style="width: 100%; text-align: left;"></div></td>
+			</tr>
 		</table>
 	</div>
-	
-	<h1 th:text="|${title}(ファイル名中の最大値：${fs.presentMaxNumberInFileName})|" style="font-size:1.5em ; color:#822;"></h1>
+
+	<h1 th:text="|${title}(ファイル名中の最大値：${fs.presentMaxNumberInFileName})|"
+		style="font-size: 1.5em; color: #822;"></h1>
 	<!--/* 
 	<span th:if="${fs!=null}"
 		th:text="|現在のファイル名中の最大整数値：${fs.presentMaxNumberInFileName}(${fs.pctDirListWithDisplayOrder.size()}管理要素)|"></span>
 	*/-->
 	<th:block th:each="errorMsg,status : ${errorMessageList}">
-		<p th:text="|(${status.count}) ${errorMsg}|" style="color:red;"></p>
+		<p th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></p>
 	</th:block>
 	<div style="width: 100%;">
 		<th:block th:if="${fs !=null && fs.pctDirListWithDisplayOrder !=null}">
@@ -138,10 +146,8 @@
 						th:onclick="showDetailOnThisImage([[${entity}]],[[@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);">
 					<p></p>
 					<table class="CDetailScriptOfImage">
-						<!--/*  
-					*/-->
 						<tr>
-							<td>管理ID</td>
+							<th>管理ID</th>
 							<td th:text="${entity.imageId}"></td>
 						</tr>
 						<tr>
@@ -190,6 +196,15 @@
 								th:text="|■${entity.duplicateOf}■|" style="color: red;"></td>
 							<td th:if="${entity.duplicateOf==null}"></td>
 						</tr>
+						<tr th:onclick="showFullQRString([[${entity.qrString}]]);">
+							<th>QR</th>
+							<td th:if="${entity.qrStringEscaped ==null}" style="background-color:#f88;"></td>
+							<td th:if="${entity.qrStringEscaped !=null}">
+								<div th:utext="${entity.qrStringEscaped}"
+									style="max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
+							</td>
+						</tr>
+
 					</table>
 				</div>
 			</th:block>
