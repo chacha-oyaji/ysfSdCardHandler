@@ -271,7 +271,7 @@ td.nrmBase {
 			</div>
 			<div
 				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
-				最大容量/画像 <select id="slFileSize4QR" name="volumeTarget">
+				最大容量 <select id="slFileSize4QR" name="volumeTarget">
 					<option th:each="elem : ${prop.maxSizeOfImageMap}"
 						th:selected=" ${elem.key == prop.maxSizeOfImage}"
 						th:value="${elem.key}" th:text="${elem.value}">
