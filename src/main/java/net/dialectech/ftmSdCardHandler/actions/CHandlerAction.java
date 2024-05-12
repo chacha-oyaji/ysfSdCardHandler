@@ -835,7 +835,7 @@ public class CHandlerAction {
 			}
 
 			Hashtable<EncodeHintType, Object> hints = new Hashtable<EncodeHintType, Object>();
-			hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
+			hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
 			hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
 
 			QRCodeWriter writer = new QRCodeWriter();
@@ -843,25 +843,25 @@ public class CHandlerAction {
 			BitMatrix bitMatrix = writer.encode(source, format, width, height, hints);
 			BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
 			ImageIO.write(image, "jpg", inFiles[0]);
+			boolean qrCodeDetected = convertTempFilesAndStore2Target(inFiles, params, "", 8, "#000");
+			if (!qrCodeDetected) {
+				errorMessageList.add("指定した文字列では解析可能なQRコードとして十分なものになっていません。");
+				errorMessageList.add("文字数を減らす、最大容量制限を拡張するなどの変更を加えて、再度生成する必要がありそうです。");
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (WriterException e) {
 			e.printStackTrace();
 		}
-		String qrCodeAfterRead = fs.analyzeQRCode(tempFileNameOfQRCode);
-
-		convertTempFilesAndStore2Target(inFiles, params, qrCodeAfterRead, "", 8 // 下左詰
-				, "#000");
 
 		fs.saveAll(errorMessageList);
 		fs.reNumberAndPrepareForDisplay();
-
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		return mav;
 	}
 
-	private void convertTempFilesAndStore2Target(File[] inFiles, CData4Upload params, String qrCodeAfterRead,
+	private boolean convertTempFilesAndStore2Target(File[] inFiles, CData4Upload params,
 			String specifiedStationName2Send, int posOfSuperImpose, String specifiedColor) {
 
 		String volumeTarget = params.getVolumeTarget();
@@ -871,6 +871,7 @@ public class CHandlerAction {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 
 		LinkedList<String> inFilesList = new LinkedList<String>();
+		boolean qrCodeDetected = false;
 		for (int index = 0; index < inFiles.length; ++index) {
 			try {
 				String inAbsoluteName = "c:\\Temp\\" + inFiles[index].getName();
@@ -997,9 +998,13 @@ public class CHandlerAction {
 				ie.setDestination(hisCall);
 				ie.setRealFileExists(true);
 				ie.storeOwnData2BufferedBytes();
-				ie.setQrString(qrCodeAfterRead);
+				String decodedQRCode = fs.analyzeQRCode(newPath.toFile().toString());
+				ie.setQrString(decodedQRCode);
 				System.out.println("Registered as " + newPath.toFile().toString());
-
+				if (decodedQRCode != null) {
+					qrCodeDetected = true;
+					System.out.println(" QR Code Detected.");
+				}
 			} catch (Exception e) {
 				// TODO 自動生成された catch ブロック
 				e.printStackTrace();
@@ -1014,7 +1019,7 @@ public class CHandlerAction {
 				e.printStackTrace();
 			}
 		}
-
+		return qrCodeDetected;
 	}
 
 	@RequestMapping(value = "uploadNewImages", method = { RequestMethod.POST, RequestMethod.GET })
@@ -1074,154 +1079,8 @@ public class CHandlerAction {
 		}
 		// ここまで来て、準備が出来上がったので、いよいよ書き込みを開始する。
 		if (inFiles != null) {
-			LinkedList<String> inFilesList = new LinkedList<String>();
-			for (int index = 0; index < inFiles.length; ++index) {
-				try {
-					String inAbsoluteName = "c:\\Temp\\" + inFiles[index].getName();
-					inFilesList.add(inAbsoluteName);
-					CImageEntry ie = fs.addNewFile(prop.getMyCallSign());
-
-					String targetDirName = prop.getStrPhotoDirectoryPath();
-
-					// File fileWorkingDir = new File(prop.getStrFileWorkingDirectoryPath());
-					// if (!fileWorkingDir.exists()) {
-					// FileUtils.forceMkdir(fileWorkingDir);
-					// }
-					Path newPath = Paths.get(targetDirName, ie.getFileCoreName());
-
-					// commandの生成
-					// ImageMagickCmd cmd = new ImageMagickCmd("magick");
-					ConvertCmd cmd = new ConvertCmd();
-					cmd.setAsyncMode(false);
-					String imageMagickPathName = prop.getImageMagickPath();
-
-					cmd.setSearchPath(imageMagickPathName);
-					// operation内容の生成。
-					IMOperation op = new IMOperation();
-					op.addImage(inAbsoluteName);
-					// 出力ファイルはJPEG
-					op.define("jpeg:extent=" + params.getVolumeTarget().trim() + "kB");
-					// 大きさを正規化
-					switch (params.getImageSize()) {
-					case 160:
-						op.resize(160, 120, '!');
-						break;
-					case 320:
-					default:
-						op.resize(320, 240, '!');
-						break;
-					}
-
-					if (specifiedStationName2Send != null && !specifiedStationName2Send.trim().equals("")) {
-						// 相手局名追加（）
-						specifiedStationName2Send = StringUtils.escapeJava(specifiedStationName2Send);
-						System.out.print(">> Imposing : \"" + specifiedStationName2Send + " : ");
-
-						String letters = specifiedStationName2Send;
-						int fontSize = 640 / (letters.length() + 2); // なぜか、320ではなくその倍でちょうど狙ったあたりになる。
-						// font サイズの最大値は36にしておく。
-						if (fontSize > 36)
-							fontSize = 36;
-						op.pointsize(fontSize);
-
-						int startXOfBackground = 0;
-						int startYOfBackground = fontSize;
-						int startXOfLetter = 1;
-						int startYOfLetter = fontSize + 1;
-						int fullLengthOfLetters = fontSize * letters.length() / 2;
-						int offsetX = 0;
-						int offsetY = 0;
-						switch (posOfSuperImpose) {
-						case 0: // 上左詰
-							offsetX = 0;
-							offsetY = 0;
-							break;
-						case 1: // 上中央
-							offsetX = (320 - fullLengthOfLetters) / 2;
-							offsetY = 0;
-							break;
-						case 2: // 上右詰
-							offsetX = (320 - fullLengthOfLetters) - fontSize / 2;
-							offsetY = 0;
-							break;
-						case 8: // 下左詰
-							offsetX = 0;
-							offsetY = 235 - fontSize;
-							break;
-						case 9: // 下中央
-							offsetX = (320 - fullLengthOfLetters) / 2;
-							offsetY = 235 - fontSize;
-							break;
-						case 10: // 下右詰
-						default:
-							offsetX = (320 - fullLengthOfLetters) - fontSize / 2;
-							offsetY = 235 - fontSize;
-							break;
-						}
-						op.font("Times-New-Roman"); // font
-						op.fill("white"); // font color
-						op.draw("text " + (startXOfBackground + offsetX) + "," + (startYOfBackground + offsetY) + " '"
-								+ letters + "'");
-						op.fill(specifiedColor); // font color
-						op.draw("text " + (startXOfLetter + offsetX) + "," + (startYOfLetter + offsetY) + " '" + letters
-								+ "'"); // location of text, actual text
-					}
-					// 余計なメタタグを削除
-					op.strip();
-					op.addImage(newPath.toString());
-
-					ArrayListOutputConsumer output = new ArrayListOutputConsumer();
-					cmd.setOutputConsumer(output);
-					// execute the operation
-					long startTime = System.currentTimeMillis();
-					boolean foundErrorOnImageMagick = false;
-					try {
-						cmd.run(op);
-					} catch (InterruptedException e) {
-						// TODO 自動生成された catch ブロック
-						e.printStackTrace();
-					} catch (IM4JavaException e) {
-						e.printStackTrace();
-					}
-					output.getOutput(); // 処理終了待ちのための空読み。
-					long processTime = System.currentTimeMillis() - startTime;
-					System.out.print(" Conversion complete (" + processTime + " mS) >> ");
-					long fileSize = newPath.toFile().length();
-					ie.setPictureSize((int) (fileSize & 0xffffff));
-					ie.setActive(true);
-
-					// 先頭コールサインの抽出
-					String hisCall = "ALL";
-					Pattern pattern = Pattern.compile("[0-9a-zA-Z\\/]+", Pattern.DOTALL);
-					Matcher matcher = pattern.matcher(specifiedStationName2Send);
-					try {
-						if (matcher.find()) {
-							hisCall = matcher.group();
-							if (hisCall.toUpperCase().trim().equals("CQ"))
-								hisCall = "ALL";
-						}
-					} catch (Exception e) {
-						// hisCall = "ALL"のままとする。
-					}
-					ie.setDestination(hisCall);
-					ie.setRealFileExists(true);
-					ie.storeOwnData2BufferedBytes();
-					System.out.println("Registered as " + newPath.toFile().toString());
-
-				} catch (IOException e) {
-					// TODO 自動生成された catch ブロック
-					e.printStackTrace();
-				}
-			}
-			// 元の一時ファイルは削除してよい。
-			for (String absFileName : inFilesList) {
-				try {
-					System.out.println("DELETING >" + absFileName);
-					FileUtils.forceDelete(new File(absFileName));
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
+			convertTempFilesAndStore2Target(inFiles, params, specifiedStationName2Send, posOfSuperImpose,
+					specifiedColor);
 		} else {
 			errorMessageList.add("少なくとも、ひとつの画像ファイルを指定してください。");
 		}

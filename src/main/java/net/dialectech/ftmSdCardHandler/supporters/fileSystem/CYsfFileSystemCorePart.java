@@ -295,7 +295,7 @@ public class CYsfFileSystemCorePart {
 			Result decodeResult = reader.decode(bitmap);
 			context = decodeResult.getText();
 		} catch (FormatException | IOException | NotFoundException | ChecksumException | CDltFlowsException e) {
-			e.printStackTrace();
+			// e.printStackTrace();
 			return null;
 		}
 		return context;

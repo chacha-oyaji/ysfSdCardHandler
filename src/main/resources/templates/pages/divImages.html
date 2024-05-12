@@ -26,9 +26,6 @@
 			$("#btnShowDirectory4Bank").click();
 		}
 	});
-	function showFullQRString(strData) {
-		alert(strData);
-	}
 </script>
 </head>
 <body>
@@ -132,7 +129,7 @@
 		th:text="|現在のファイル名中の最大整数値：${fs.presentMaxNumberInFileName}(${fs.pctDirListWithDisplayOrder.size()}管理要素)|"></span>
 	*/-->
 	<th:block th:each="errorMsg,status : ${errorMessageList}">
-		<p th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></p>
+		<div th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></div>
 	</th:block>
 	<div style="width: 100%;">
 		<th:block th:if="${fs !=null && fs.pctDirListWithDisplayOrder !=null}">
@@ -196,7 +193,7 @@
 								th:text="|■${entity.duplicateOf}■|" style="color: red;"></td>
 							<td th:if="${entity.duplicateOf==null}"></td>
 						</tr>
-						<tr th:onclick="showFullQRString([[${entity.qrString}]]);">
+						<tr>
 							<th>QR</th>
 							<td th:if="${entity.qrStringEscaped ==null}" style="background-color:#f88;"></td>
 							<td th:if="${entity.qrStringEscaped !=null}">
