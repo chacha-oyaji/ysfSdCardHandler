@@ -49,6 +49,9 @@ public class CData4Upload extends CDltSimpleFileHandler {
 	private int targetImageId;
 	@Setter
 	@Getter
+	private String description2Change ;
+	@Setter
+	@Getter
 	private LinkedList<String> errorMessageMap = new LinkedList<String>();
 	@Setter
 	@Getter

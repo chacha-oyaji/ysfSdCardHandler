@@ -25,20 +25,31 @@
 		} else {
 			$("#btnShowDirectory4Bank").click();
 		}
+		$("#dlgDetailDialog").dialog("close");
 	});
 </script>
 </head>
 <body>
+	<!--/* 原画像ファイルとDIR情報を残しつつ、削除マークをつけるだけの処理のリクエスト*/-->
 	<form id="frmDeleteMarking" method="post"
 		th:action="@{/execute/deleteMarking}">
 		<input type="hidden" id="txtImageIdOfDelete" name="targetImageId"
 			value="test">
 	</form>
+	<!--/* 原画像ファイルとDIR情報を跡形もなく完全に削除する処理のリクエスト*/-->
 	<form id="frmCompleteDeleteAndExec" method="post"
 		th:action="@{/execute/deleteCompletely}">
 		<input type="hidden" id="txtImageIdOfDeleteCompletely"
 			name="targetImageId" value="test">
 	</form>
+	<!--/* DIR情報中の「記述」欄の修正を求めるリクエスト　*/-->
+	<form id="frmChangeDescription" method="post"
+		th:action="@{/execute/changeDescription}">
+		<input type="hidden" id="txtImageIdOfChangeDescription"
+			name="targetImageId"> <input type="hidden"
+			id="txtDestinationOfChangeDescription" name="description2Change">
+	</form>
+	<!--/* DIR情報に削除マークが付けられた画像について、参照可能に復活させるためのリクエスト*/-->
 	<form id="frmRecoverMarking" method="post"
 		th:action="@{/execute/recoverMarking}">
 		<input type="hidden" id="txtImageIdOfRecover" name="targetImageId"
@@ -87,9 +98,19 @@
 				<td><div id="tdTxtDestination"></div></td>
 			</tr>
 			<tr>
-				<th>記述</th>
-				<td><button type="button">変更</button>
-					<div id="tdTxtDescription"></div></td>
+				<th>記述
+					<button type="button"
+						onclick="$('#trSourceOfChangeDescription').toggle();">変更</button>
+				</th>
+				<td>
+					<div id="tdTxtDescription" style="float: left;"></div>
+				</td>
+			</tr>
+			<tr style="display: none;" id="trSourceOfChangeDescription">
+				<th>記述変更指示</th>
+				<td style="text-align: left;"><input type="text"
+					id="txtSourceOfChangeDescription" style="width: 16em;">
+				<button type="button" onclick="requestChangeDescription();" style="background-color:#ccf;">変更実行</button></td>
 			</tr>
 			<tr>
 				<th>記録日時</th>
@@ -137,12 +158,13 @@
 			<th:block th:each="entity : ${fs.pctDirListWithDisplayOrder}">
 				<div th:if="${entity.realFileExists}"
 					th:class="${entity.active?'cDivShowImage':'cDivHideImage'}"
-					th:style="|float: left; margin: 2px;border:${entity.borderDefinition()};background-color:${entity.backgroundDefinition};|">
+					th:style="|float: left; margin: 2px;border:${entity.borderDefinition()};background-color:${entity.backgroundDefinition}; text-align: center;|">
+					<div th:text="${entity.description}"
+						style="text-align: center; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
 					<img
 						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
-						th:style="|width: 160px; height: 120px; margin: 5px;position: relative;|"
+						style="width: 160px; height: 120px; margin: 5px; position: relative;"
 						th:onclick="showDetailOnThisImage([[${entity}]],[[@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);">
-					<p></p>
 					<table class="CDetailScriptOfImage">
 						<tr>
 							<th>管理ID</th>
@@ -161,10 +183,12 @@
 							<th>To</th>
 							<td th:text="${entity.destination}"></td>
 						</tr>
+						<!--/*  
 						<tr>
 							<th>記述</th>
 							<td th:text="${entity.description}"></td>
 						</tr>
+						*/-->
 						<tr>
 							<th>記録</th>
 							<td
@@ -204,7 +228,7 @@
 									th:if="${entity.includedURL != null && entity.includedEMailAddress != null }"
 									th:onclick="window.open([[${entity.includedURL}]],'','noreferrer');">
 									<div th:utext="${entity.includedURL}"
-										style="cursor: pointer; background-color: cyan; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
+										style="cursor: pointer; background-color: #aff; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
 								</td>
 								<!--/* EMAILアドレスのみがある場合 */-->
 								<td

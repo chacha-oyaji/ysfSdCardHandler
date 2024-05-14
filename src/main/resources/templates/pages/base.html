@@ -84,7 +84,6 @@ td.nrmBase {
 	th:insert="~{js4Spring/general/flowActionGeneral :: javascriptBody}"></th:block>
 <script>
 	$().ready(function() {
-		//submitAndStore2Target("frmTest", "divImageBlock");
 		$('#tabMain').tabs({
 			active : 0
 		});
@@ -96,7 +95,7 @@ td.nrmBase {
 		executeLiteralCount();
 	});
 
-	var area = container.querySelector('textarea');
+	var area = $('textarea');
 	if (area.addEventListener) {
 		area.addEventListener('input', function() {
 			// event handling code for sane browsers
@@ -150,12 +149,14 @@ td.nrmBase {
 	}
 
 	function showDetailOnThisImage(data, imgUrl) {
+		$("#trSourceOfChangeDescription").hide();
 		$("#dlgDetailDialog").dialog("open");
 		$("#tdTxtImageId").text(data.imageId);
 		$("#tdTxtSym").text(data.symMeaning);
 		$("#tdTxtMyCallSign").text(data.myCallSign);
 		$("#tdTxtDestination").text(data.destination);
 		$("#tdTxtDescription").text(data.description);
+		$('#txtSourceOfChangeDescription').val(data.description);
 		$("#tdTxtBaseDate").text((new Date(data.baseDate)).toLocaleString());
 		$("#tdTxtDate2Send").text((new Date(data.date2Send)).toLocaleString());
 		$("#tdTxtDate2Receive").text(
@@ -163,6 +164,8 @@ td.nrmBase {
 		$("#tdTxtPictureSize").text(data.pictureSize);
 		$("#tdTxtFileCoreName").text(data.fileCoreName);
 		$("#tdTxtDuplicateOf").text(data.duplicateOf);
+
+		// 画像にQRコードが含まれていて、このコードにURLが含まれている場合、並びにEMailAddressが含まれている場合
 		var additionalButtons = "";
 		var color = null;
 		if (data.includedURL != null || data.includedEMailAddress != null) {
@@ -175,18 +178,24 @@ td.nrmBase {
 			if (data.includedEMailAddress != null) {
 				additionalButtons += "<button type=\"button\" onclick=\"location.href=\'mailto:"
 						+ data.includedEMailAddress
-						+ "?subject=mail from " + data.myCallSign + "\'\">EMailを作成</button>";
+						+ "?subject=mail from "
+						+ data.myCallSign + "\'\">EMailを作成</button>";
 				color = "#8f8";
 			}
-			if ((data.includedURL != null) && (data.includedEMailAddress != null))
-				color = "cyan";
+			if ((data.includedURL != null)
+					&& (data.includedEMailAddress != null))
+				color = "#aff";
 			$("#tdTxtQRStringHtml").html(
 					additionalButtons + "<br/>" + data.qrStringHtml);
 			$("#tdTxtQRStringHtml").css("background-color", color);
 		} else {
-			$("#tdTxtQRStringHtml").css("background-color", "white");
+			if (data.qrStringEscaped != null)
+				$("#tdTxtQRStringHtml").css("background-color", "#fcc");
+			else
+				$("#tdTxtQRStringHtml").css("background-color", "white");
 			$("#tdTxtQRStringHtml").html(data.qrStringHtml);
 		}
+		
 		// 画像関連詳細情報ダイアログボックス内で既削除画像の場合には復活ボタンを、現存画像の場合には削除ボタンを表示するようになっている。
 		if (data.active) {
 			$("#btnRecoverThis").hide();
@@ -199,15 +208,18 @@ td.nrmBase {
 			$("#btnDeleteThisCompletely").show();
 			$("#dlgDetailDialog").css("background-color", "#555");
 		}
+		// 画像そのもののURLを設定
 		$("#imgOnDetailDescription").attr('src', imgUrl)
+		// 各種指示・設定用のリクエストform にこのimageIdを設定
 		$("#txtImageIdOfDelete").val(data.imageId);
 		$("#txtImageIdOfDeleteCompletely").val(data.imageId);
 		$("#txtImageIdOfRecover").val(data.imageId);
+		$("#txtImageIdOfChangeDescription").val(data.imageId);
 	}
 
 	function confirmCompleteDeleteAndExec() {
 		if (window
-				.confirm('*************\n本処理は復活できません。\n*************\nまた、リグの電源再立ち上げが必要になります。\n\n本画像を削除してよいですか？')) {
+				.confirm('*************\n本処理は復活できません。\n*************\nまた、リグの電源再立ち上げが必要になります。\n\n本画像を削除してよろしいですか？')) {
 			// OKの場面
 			$("#dlgDetailDialog").dialog("close");
 			submitAndStore2Target('frmCompleteDeleteAndExec', 'divImageGallery');
@@ -271,16 +283,27 @@ td.nrmBase {
 		console.log("NO!!!");
 	}
 
+	// QRコード入力欄に入力済みの文字列の文字数の表示
 	function executeLiteralCount() {
 		if ($('#taQRInfo').val() == null)
 			$('#dvTotalByteOfQRString').text(0);
 		else
 			$('#dvTotalByteOfQRString').text($('#taQRInfo').val().length);
 	}
-	
-	function executeMailTo(eMailAddress,myCallSign) {
-		location.href="mailto:"+ eMailAddress + "?subject=mail From " + myCallSign;
+
+	// メーラを起動する
+	function executeMailTo(eMailAddress, myCallSign) {
+		location.href = "mailto:" + eMailAddress + "?subject=mail From "
+				+ myCallSign;
 	}
+	
+	function requestChangeDescription() {
+		// txtImageIdOfChangeDescriptionには、showDetailOnThisImage()が設置しているので設定の必要性なし。
+		$("#txtDestinationOfChangeDescription").val($("#txtSourceOfChangeDescription").val());
+		submitAndStore2Target("frmChangeDescription","divImageGallery");
+		
+	}
+	
 </script>
 </head>
 <body>
@@ -296,6 +319,8 @@ td.nrmBase {
 			<div>
 				テキストの文字数：<span id="dvTotalByteOfQRString"></span>
 			</div>
+			記述(空白許容)：<input id="txtQRDescription" name="description2Change"
+				style="width: 16em;"> <br />
 			<div
 				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
 				最大容量 <select id="slFileSize4QR" name="volumeTarget">
@@ -323,7 +348,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405141252
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405142134
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
@@ -341,7 +366,7 @@ td.nrmBase {
 
 							<div>
 								<button id="btnMountAndLoad"
-									onclick="submitAndStore2Target('frmLoadSDCard','divImageGallery');"
+									onclick="$('#dlgDetailDialog').dialog('close');submitAndStore2Target('frmLoadSDCard','divImageGallery');"
 									style="margin-right: 10px;">MOUNT</button>
 								<br />
 								<button id="btnOpenQRCodeInputDialog"

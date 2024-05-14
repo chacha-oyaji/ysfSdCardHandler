@@ -863,7 +863,7 @@ public class CHandlerAction {
 			try {
 				String inAbsoluteName = "c:\\Temp\\" + inFiles[index].getName();
 				inFilesList.add(inAbsoluteName);
-				CImageEntry ie = fs.addNewFile(prop.getMyCallSign());
+				CImageEntry ie = fs.addNewFile(prop.getMyCallSign(), params.getDescription2Change());
 
 				String targetDirName = prop.getStrPhotoDirectoryPath();
 
@@ -1007,6 +1007,44 @@ public class CHandlerAction {
 			}
 		}
 		return qrCodeDetected;
+	}
+
+	@RequestMapping(value = "changeDescription", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataChangeDescription(@ModelAttribute CData4Upload params, HttpSession session,
+			ModelAndView mav) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			fs.clearAll();
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+
+		// ImageMagickの存否チェック
+		String imageMagickPathName4Check = prop.getImageMagickPath();
+		File imProcessFile = new File(imageMagickPathName4Check + "convert.exe");
+		if (!imProcessFile.exists()) {
+			errorMessageList.add("ImageMagickの指定場所に処理プログラムが見つかりません。");
+			errorMessageList.add("「対象設定」タブ中の「ImageMagickの記録場所」の指定を確認してください。");
+			errorMessageList.add("ImageMagickの記録場所はフォルダを指定するので、末尾が'\\'で終わる必要があります。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+		
+		if (params.getDescription2Change()==null || params.getDescription2Change().equals("")) {
+			errorMessageList.add("変更する記述が記載されていません。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+		fs.changeDescription(params.getTargetImageId(),params.getDescription2Change());
+		fs.saveAll(errorMessageList);
+		fs.reNumberAndPrepareForDisplay();
+		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
+				"pages/divImages");
+		return mav;
 	}
 
 	@RequestMapping(value = "uploadNewImages", method = { RequestMethod.POST, RequestMethod.GET })

@@ -75,10 +75,10 @@ public class CYsfFileSystemCorePart {
 		System.out.println("coreBase Constructor: " + this.toString());
 	}
 
-	public CImageEntry addNewFile(String myCallSign) {
+	public CImageEntry addNewFile(String myCallSign,String description2Change) {
 		String newFileName = createNewFileNameByIndex(++presentMaxNumberInFileName);
 		CImageEntry newImageDirData = new CImageEntry(prop.getRadioId(), myCallSign, "", newFileName,
-				presentMaxNumberInFileName);
+				presentMaxNumberInFileName,description2Change);
 		newImageDirData.storeOwnData2BufferedBytes();
 
 		pctDirListWithDisplayOrder.addFirst(newImageDirData);
@@ -89,6 +89,14 @@ public class CYsfFileSystemCorePart {
 		return newImageDirData;
 	}
 
+	public void changeDescription(int targetImageId, String description2Change) {
+		for (CImageEntry d : pctDirList) {
+			if (d.getImageId() == targetImageId) {
+				d.setDescription(description2Change);
+				break;
+			}
+		}
+	}
 	/**
 	 * void clearAll()
 	 * 

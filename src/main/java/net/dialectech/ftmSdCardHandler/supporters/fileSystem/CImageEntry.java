@@ -96,7 +96,8 @@ public class CImageEntry {
 	 * @param nodeId
 	 * @param newFileName
 	 */
-	public CImageEntry(String radioId, String callSign, String nodeId, String newFileName, int imageId) {
+	public CImageEntry(String radioId, String callSign, String nodeId, String newFileName, int imageId,
+			String description2Write) {
 		sym = 0;
 		this.imageId = imageId;
 		this.radioId = radioId;
@@ -111,8 +112,14 @@ public class CImageEntry {
 		this.baseDate = new Date();
 		duplicateOf = null;
 		this.fileCoreName = newFileName;
-		this.description = getNumberPartOfFileName(newFileName) + ":"
-				+ (new SimpleDateFormat("ssmm/MdH").format(new Date()));
+		if (description2Write == null || description2Write.equals("")) {
+			// description2Changeが指定されていないときには、標準的なものとする。
+			this.description = getNumberPartOfFileName(newFileName) + ":"
+					+ (new SimpleDateFormat("ssmm/MdH").format(new Date()));
+		}
+		else {
+			this.description =description2Write.substring(0,15) ;
+		}
 		generatedUniqString = UUID.randomUUID().toString().replaceAll("\\-", "");
 	}
 
