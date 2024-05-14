@@ -3,6 +3,9 @@ package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
 import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.commons.text.StringEscapeUtils;
 
 import jakarta.xml.bind.DatatypeConverter;
@@ -57,8 +60,13 @@ public class CImageEntry {
 	@Setter
 	private String description = ""; // 必ず１６文字
 	@Getter
-	@Setter
 	private String qrString = ""; // QRコード内部
+	@Getter
+	@Setter
+	private String includedURL = null; // QRコード内部に含まれるURLを記録
+	@Getter
+	@Setter
+	private String includedEMailAddress = null; // QRコード内部に含まれるE-Mail Addressを記録
 	@Getter
 	private int pictureSize; // このうち4bytesがDIRに記録される。
 	@Getter
@@ -76,6 +84,9 @@ public class CImageEntry {
 	@Getter
 	@Setter
 	private byte[] imageEntry = new byte[128];
+
+	Pattern pattern4URL = Pattern.compile("http(s)?://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=!]*)?");
+	Pattern pattern4EMail = Pattern.compile("[\\w\\-\\._]+@[\\w\\-\\._]+\\.[A-Za-z]+");
 
 	/**
 	 * Handlerプログラムで追加登録するときに用いる構築子
@@ -161,16 +172,35 @@ public class CImageEntry {
 	}
 
 	public String getQrStringHtml() {
-		if (qrString==null) 
-			return null ;
+		if (qrString == null)
+			return null;
 		String htmlConverted = StringEscapeUtils.escapeHtml4(qrString).replaceAll("\n", "<br>\n").replaceAll(" ",
 				"&nbsp;");
 		return htmlConverted;
 	}
 
+	public void setQrString(String qrString) {
+		this.qrString = qrString;
+
+		if (qrString == null)
+			return;
+
+		Matcher matcher = pattern4URL.matcher(qrString);
+		if (matcher.find()) {
+			includedURL = matcher.group(0);
+		} else
+			includedURL = null;
+
+		Matcher matcher4EMailAddress = pattern4EMail.matcher(qrString);
+		if (matcher4EMailAddress.find()) {
+			includedEMailAddress = matcher4EMailAddress.group(0);
+		} else
+			includedEMailAddress = null;
+	}
+
 	public String getQrStringEscaped() {
-		if (qrString==null)
-			return null ;
+		if (qrString == null)
+			return null;
 		String htmlConverted = StringEscapeUtils.escapeHtml4(qrString);
 		return htmlConverted;
 	}

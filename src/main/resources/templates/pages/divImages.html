@@ -88,7 +88,8 @@
 			</tr>
 			<tr>
 				<th>記述</th>
-				<td><div id="tdTxtDescription"></div></td>
+				<td><button type="button">変更</button>
+					<div id="tdTxtDescription"></div></td>
 			</tr>
 			<tr>
 				<th>記録日時</th>
@@ -195,11 +196,37 @@
 						</tr>
 						<tr>
 							<th>QR</th>
-							<td th:if="${entity.qrStringEscaped ==null}" style="background-color:#f88;"></td>
-							<td th:if="${entity.qrStringEscaped !=null}">
-								<div th:utext="${entity.qrStringEscaped}"
-									style="max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
-							</td>
+							<td th:if="${entity.qrStringEscaped == null}"
+								style="background-color: #fff;">---</td>
+							<th:block th:if="${entity.qrStringEscaped != null}">
+								<!--/* EMAILアドレスとURLとがある場合には、URLを優先してリンク */-->
+								<td
+									th:if="${entity.includedURL != null && entity.includedEMailAddress != null }"
+									th:onclick="window.open([[${entity.includedURL}]],'','noreferrer');">
+									<div th:utext="${entity.includedURL}"
+										style="cursor: pointer; background-color: cyan; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
+								</td>
+								<!--/* EMAILアドレスのみがある場合 */-->
+								<td
+									th:if="${entity.includedURL == null && entity.includedEMailAddress != null}"
+									th:onclick="executeMailTo([[${entity.includedEMailAddress}]],[[${entity.myCallSign}]]);">
+									<div th:utext="${entity.includedEMailAddress}"
+										style="cursor: pointer; background-color: #8f8; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
+								</td>
+								<!--/* URLのみがある場合 */-->
+								<td
+									th:if="${entity.includedURL != null && entity.includedEMailAddress == null}"
+									th:onclick="window.open([[${entity.includedURL}]],'','noreferrer');">
+									<div th:utext="${entity.includedURL}"
+										style="cursor: pointer; background-color: yellow; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
+								</td>
+								<!--/* URLもEMAILアドレスもない場合 */-->
+								<td
+									th:if="${entity.includedURL == null && entity.includedEMailAddress == null}">
+									<div th:utext="${entity.qrStringEscaped}"
+										style="background-color: #fcc; cursor: auto; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
+								</td>
+							</th:block>
 						</tr>
 
 					</table>

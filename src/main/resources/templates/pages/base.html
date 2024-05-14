@@ -163,7 +163,30 @@ td.nrmBase {
 		$("#tdTxtPictureSize").text(data.pictureSize);
 		$("#tdTxtFileCoreName").text(data.fileCoreName);
 		$("#tdTxtDuplicateOf").text(data.duplicateOf);
-		$("#tdTxtQRStringHtml").html(data.qrStringHtml);
+		var additionalButtons = "";
+		var color = null;
+		if (data.includedURL != null || data.includedEMailAddress != null) {
+			if (data.includedURL != null) {
+				additionalButtons += "<button type=\"button\" onclick=\"window.open('"
+						+ data.includedURL
+						+ "','','noreferrer');\">URL先を参照</button>";
+				color = "yellow";
+			}
+			if (data.includedEMailAddress != null) {
+				additionalButtons += "<button type=\"button\" onclick=\"location.href=\'mailto:"
+						+ data.includedEMailAddress
+						+ "?subject=mail from " + data.myCallSign + "\'\">EMailを作成</button>";
+				color = "#8f8";
+			}
+			if ((data.includedURL != null) && (data.includedEMailAddress != null))
+				color = "cyan";
+			$("#tdTxtQRStringHtml").html(
+					additionalButtons + "<br/>" + data.qrStringHtml);
+			$("#tdTxtQRStringHtml").css("background-color", color);
+		} else {
+			$("#tdTxtQRStringHtml").css("background-color", "white");
+			$("#tdTxtQRStringHtml").html(data.qrStringHtml);
+		}
 		// 画像関連詳細情報ダイアログボックス内で既削除画像の場合には復活ボタンを、現存画像の場合には削除ボタンを表示するようになっている。
 		if (data.active) {
 			$("#btnRecoverThis").hide();
@@ -254,6 +277,10 @@ td.nrmBase {
 		else
 			$('#dvTotalByteOfQRString').text($('#taQRInfo').val().length);
 	}
+	
+	function executeMailTo(eMailAddress,myCallSign) {
+		location.href="mailto:"+ eMailAddress + "?subject=mail From " + myCallSign;
+	}
 </script>
 </head>
 <body>
@@ -296,7 +323,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405111510
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405141252
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
