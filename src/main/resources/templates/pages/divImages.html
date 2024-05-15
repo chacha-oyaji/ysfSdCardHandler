@@ -103,14 +103,17 @@
 						onclick="$('#trSourceOfChangeDescription').toggle();">変更</button>
 				</th>
 				<td>
-					<div id="tdTxtDescription" style="float: left;"></div>
+					<div id="tdTxtDescription"></div>
 				</td>
 			</tr>
 			<tr style="display: none;" id="trSourceOfChangeDescription">
 				<th>記述変更指示</th>
 				<td style="text-align: left;"><input type="text"
-					id="txtSourceOfChangeDescription" style="width: 16em;">
-				<button type="button" onclick="requestChangeDescription();" style="background-color:#ccf;">変更実行</button></td>
+					id="txtSourceOfChangeDescription" style="width: 16em;"
+					oninput="executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol');">
+					<button type="button" onclick="requestChangeDescription();"
+						style="background-color: #ccf;">変更実行</button> <br />
+					<div id="txtDescriptionLiteralVol"></div></td>
 			</tr>
 			<tr>
 				<th>記録日時</th>
@@ -164,7 +167,7 @@
 					<img
 						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
 						style="width: 160px; height: 120px; margin: 5px; position: relative;"
-						th:onclick="showDetailOnThisImage([[${entity}]],[[@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);">
+						th:onclick="showDetailOnThisImage([[${entity}]],[[@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol');">
 					<table class="CDetailScriptOfImage">
 						<tr>
 							<th>管理ID</th>

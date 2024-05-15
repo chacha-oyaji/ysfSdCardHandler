@@ -118,7 +118,10 @@ public class CImageEntry {
 					+ (new SimpleDateFormat("ssmm/MdH").format(new Date()));
 		}
 		else {
-			this.description =description2Write.substring(0,15) ;
+			if (description2Write.length()>15)
+				this.description =description2Write.substring(0,15) ;
+			else
+				this.description =description2Write ;
 		}
 		generatedUniqString = UUID.randomUUID().toString().replaceAll("\\-", "");
 	}

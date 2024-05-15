@@ -11,9 +11,7 @@
 <link
 	th:href="@{/webjars/jquery-ui-themes/1.13.2/ui-lightness/jquery-ui.css}"
 	rel="stylesheet">
-<!--/*  
-<link rel="stylesheet" th:href="@{/css/frontpage.css}" type="text/css" />
-	*/-->
+
 <style type="text/css">
 /*
 	table format
@@ -92,19 +90,8 @@ td.nrmBase {
 			minWidth : 680,
 			minHeight : 300
 		});
-		executeLiteralCount();
+		executeLiteralCount('taQRInfo','dvTotalByteOfQRString');
 	});
-
-	var area = $('textarea');
-	if (area.addEventListener) {
-		area.addEventListener('input', function() {
-			// event handling code for sane browsers
-		}, false);
-	} else if (area.attachEvent) {
-		area.attachEvent('onpropertychange', function() {
-			// IE-specific event handling code
-		});
-	}
 
 	function resetByDetailMode() {
 		var detailMode = $("#cbToggleDetail").prop("checked");
@@ -195,7 +182,7 @@ td.nrmBase {
 				$("#tdTxtQRStringHtml").css("background-color", "white");
 			$("#tdTxtQRStringHtml").html(data.qrStringHtml);
 		}
-		
+
 		// 画像関連詳細情報ダイアログボックス内で既削除画像の場合には復活ボタンを、現存画像の場合には削除ボタンを表示するようになっている。
 		if (data.active) {
 			$("#btnRecoverThis").hide();
@@ -284,11 +271,22 @@ td.nrmBase {
 	}
 
 	// QRコード入力欄に入力済みの文字列の文字数の表示
-	function executeLiteralCount() {
-		if ($('#taQRInfo').val() == null)
-			$('#dvTotalByteOfQRString').text(0);
+	function executeLiteralCount(sourceId,targetId) {
+		if ($('#' + sourceId).val() == null)
+			$('#' + targetId).text("0 文字");
 		else
-			$('#dvTotalByteOfQRString').text($('#taQRInfo').val().length);
+			$('#' + targetId).text($('#' + sourceId).val().length + " 文字");
+	}
+
+	function executeDescriptionCount(sourceId,targetId) {
+		if ($('#' + sourceId).val() == null)
+			$('#'+ targetId).text(0);
+		else {
+			var lengthOfDescription = $('#' + sourceId).val().length;
+			if (lengthOfDescription > 11)
+				lengthOfDescription = "<font color='red'>11文字を越える文字は無視されます。</font>" +　lengthOfDescription ;
+			$('#'+ targetId).html(lengthOfDescription　+　"文字");
+		}
 	}
 
 	// メーラを起動する
@@ -296,14 +294,28 @@ td.nrmBase {
 		location.href = "mailto:" + eMailAddress + "?subject=mail From "
 				+ myCallSign;
 	}
-	
+
 	function requestChangeDescription() {
 		// txtImageIdOfChangeDescriptionには、showDetailOnThisImage()が設置しているので設定の必要性なし。
-		$("#txtDestinationOfChangeDescription").val($("#txtSourceOfChangeDescription").val());
-		submitAndStore2Target("frmChangeDescription","divImageGallery");
-		
+		var sourceString = $("#txtSourceOfChangeDescription").val();
+		if (!sourceString.match(/^[\x20-\x7e]*$/)) {
+			window.alert("文字列は、ASCII文字に限ってください。");
+			return true;
+		}
+		$("#txtDestinationOfChangeDescription").val(
+				$("#txtSourceOfChangeDescription").val());
+		submitAndStore2Target("frmChangeDescription", "divImageGallery");
 	}
-	
+
+	function executeCreateQRCodeAndLoadPresentImages() {
+		var sourceString = $("#txtQRDescription").val();
+		if (!sourceString.match(/^[\x20-\x7e]*$/)) {
+			window.alert("文字列は、ASCII文字に限ってください。");
+			return true;
+		}
+		submitAndStore2Target('frmQRCodeUpload', 'divImageGallery');
+		$('#dlgQRCodeInputDialog').dialog('close');
+	}
 </script>
 </head>
 <body>
@@ -314,13 +326,16 @@ td.nrmBase {
 			enctype="multipart/form-data">
 			<h2>QRコードに変換する文字列</h2>
 			<textarea id="taQRInfo" name="strQRCode"
-				style="width: 640px; height: 8em;" oninput="executeLiteralCount();"></textarea>
+				style="width: 640px; height: 8em;" oninput="executeLiteralCount('taQRInfo','dvTotalByteOfQRString');"></textarea>
 			<br />
 			<div>
 				テキストの文字数：<span id="dvTotalByteOfQRString"></span>
 			</div>
 			記述(空白許容)：<input id="txtQRDescription" name="description2Change"
-				style="width: 16em;"> <br />
+				style="width: 16em;" oninput="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString');"> <br />
+			<div>
+				記述の文字数：<span id="dvTotalByteOfDescriptionString"></span>
+			</div>
 			<div
 				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
 				最大容量 <select id="slFileSize4QR" name="volumeTarget">
@@ -335,9 +350,9 @@ td.nrmBase {
 			<div
 				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
 				<button type="button"
-					onclick="$('#taQRInfo').val('');executeLiteralCount();">電文削除</button>
+					onclick="$('#taQRInfo').val('');executeLiteralCount('taQRInfo','dvTotalByteOfQRString');">電文削除</button>
 				<button type="button"
-					onclick="submitAndStore2Target('frmQRCodeUpload','divImageGallery');$('#dlgQRCodeInputDialog').dialog('close');">Convert
+					onclick="executeCreateQRCodeAndLoadPresentImages() ;">Convert
 					and Upload</button>
 			</div>
 		</form>
@@ -348,7 +363,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405142134
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405151246
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
@@ -370,7 +385,7 @@ td.nrmBase {
 									style="margin-right: 10px;">MOUNT</button>
 								<br />
 								<button id="btnOpenQRCodeInputDialog"
-									onclick="$('#dlgQRCodeInputDialog').dialog('open');"
+									onclick="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString');$('#dlgQRCodeInputDialog').dialog('open');"
 									style="margin-right: 10px;">QR入力</button>
 							</div>
 							<div
