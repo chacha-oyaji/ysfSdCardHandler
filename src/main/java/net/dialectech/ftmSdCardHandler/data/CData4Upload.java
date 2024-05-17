@@ -77,6 +77,9 @@ public class CData4Upload extends CDltSimpleFileHandler {
 	@Getter
 	@Setter
 	private int imageSize;
+	@Getter
+	@Setter
+	private String errorCorrectionLevel;
 
 	// 以下はshowBankListリクエストにおいて使用される。
 	@Getter

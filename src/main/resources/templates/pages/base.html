@@ -87,7 +87,7 @@ td.nrmBase {
 		});
 		$("#dlgQRCodeInputDialog").dialog({
 			autoOpen : false,
-			minWidth : 680,
+			minWidth : 800,
 			minHeight : 300
 		});
 		executeLiteralCount('taQRInfo','dvTotalByteOfQRString');
@@ -298,21 +298,14 @@ td.nrmBase {
 	function requestChangeDescription() {
 		// txtImageIdOfChangeDescriptionには、showDetailOnThisImage()が設置しているので設定の必要性なし。
 		var sourceString = $("#txtSourceOfChangeDescription").val();
-		if (!sourceString.match(/^[\x20-\x7e]*$/)) {
-			window.alert("文字列は、ASCII文字に限ってください。");
-			return true;
-		}
+
 		$("#txtDestinationOfChangeDescription").val(
 				$("#txtSourceOfChangeDescription").val());
 		submitAndStore2Target("frmChangeDescription", "divImageGallery");
 	}
 
 	function executeCreateQRCodeAndLoadPresentImages() {
-		var sourceString = $("#txtQRDescription").val();
-		if (!sourceString.match(/^[\x20-\x7e]*$/)) {
-			window.alert("文字列は、ASCII文字に限ってください。");
-			return true;
-		}
+		// var sourceString = $("#txtQRDescription").val();
 		submitAndStore2Target('frmQRCodeUpload', 'divImageGallery');
 		$('#dlgQRCodeInputDialog').dialog('close');
 	}
@@ -326,13 +319,21 @@ td.nrmBase {
 			enctype="multipart/form-data">
 			<h2>QRコードに変換する文字列</h2>
 			<textarea id="taQRInfo" name="strQRCode"
-				style="width: 640px; height: 8em;" oninput="executeLiteralCount('taQRInfo','dvTotalByteOfQRString');"></textarea>
+				style="width: 760px; height: 8em;"
+				oninput="executeLiteralCount('taQRInfo','dvTotalByteOfQRString');"></textarea>
 			<br />
 			<div>
 				テキストの文字数：<span id="dvTotalByteOfQRString"></span>
 			</div>
 			記述(空白許容)：<input id="txtQRDescription" name="description2Change"
-				style="width: 16em;" oninput="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString');"> <br />
+				style="width: 16em;"
+				oninput="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString');">
+			<button type="button" onclick="$('#divLiteralExplain').toggle();">使用文字の説明</button>
+			<br />
+			<div id="divLiteralExplain"
+				style="display: none; background-color: #fcc;"
+				onclick="$('#divLiteralExplain').hide();">「記述」欄で使用できる文字列は、半角の英数字(0～9,a～z,A～Z)
+				、半角の特殊文字（!"#$%&\'()*+,-./）、並びに全角のカタカナに限ります。</div>
 			<div>
 				記述の文字数：<span id="dvTotalByteOfDescriptionString"></span>
 			</div>
@@ -345,6 +346,11 @@ td.nrmBase {
 				</select> <select name="imageSize">
 					<option value="160">160×120</option>
 					<option value="320" selected>320×240</option>
+				</select>誤り訂正レベル<select name="errorCorrectionLevel">
+					<option value="H">強　(30%までの訂正能力)</option>
+					<option value="Q" selected>中強(25%までの訂正能力)</option>
+					<option value="M">中　(15%までの訂正能力)</option>
+					<option value="L">弱　(7%までの訂正能力)</option>
 				</select>
 			</div>
 			<div
@@ -363,7 +369,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405151246
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405170837
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>

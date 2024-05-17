@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -49,6 +50,7 @@ import lombok.Setter;
 import net.dialectech.ftmSdCardHandler.data.CData4Upload;
 import net.dialectech.ftmSdCardHandler.data.CDirStructure;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
+import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFileUtilities;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
@@ -761,7 +763,6 @@ public class CHandlerAction {
 
 		if (params.getStrQRCode() == null || params.getStrQRCode().equals("")) {
 			errorMessageList.add("QRコードに変換する文字列が指定されていません。");
-			fs.clearAll();
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
 		}
@@ -822,7 +823,9 @@ public class CHandlerAction {
 			}
 
 			Hashtable<EncodeHintType, Object> hints = new Hashtable<EncodeHintType, Object>();
-			hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+			
+			ErrorCorrectionLevel ecLevel = ErrorCorrectionLevel.valueOf(params.getErrorCorrectionLevel()) ;
+			hints.put(EncodeHintType.ERROR_CORRECTION, ecLevel);
 			hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
 
 			QRCodeWriter writer = new QRCodeWriter();
@@ -830,6 +833,18 @@ public class CHandlerAction {
 			BitMatrix bitMatrix = writer.encode(source, format, width, height, hints);
 			BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
 			ImageIO.write(image, "jpg", inFiles[0]);
+			
+			// YAESU SYSTEM FUSIONでの特殊カタカナに特化して対応文字の存否チェック
+			// 一旦、UTF8 -> YSF特殊文字 -> UTF8　と変換をして、元に戻るかどうかで検証する。
+			CYsfCodeConverter converter = CYsfCodeConverter.getInstance() ;
+			String finalDescription = converter.ysfByte2Utf8(converter.utf82YsfByte(params.getDescription2Change().trim()));
+			if (finalDescription!=null && !finalDescription.equals(params.getDescription2Change()) ) {
+				errorMessageList.add("「記述」に使えない文字がありましたので、「$」に置き換えてあります。");
+				params.setDescription2Change(finalDescription);
+			}
+			// Description 中間にあるSPACE文字は、なぜかFTM-300の暴走を引き起こすので、アンダースコアに置換しておく。
+			params.setDescription2Change(finalDescription.replaceAll(" ", "_"));
+			
 			boolean qrCodeDetected = convertTempFilesAndStore2Target(inFiles, params, "", 8, "#000");
 			if (!qrCodeDetected) {
 				errorMessageList.add("指定した文字列では解析可能なQRコードとして十分なものになっていません。");
@@ -1039,6 +1054,18 @@ public class CHandlerAction {
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
 		}
+		// YAESU SYSTEM FUSIONでの特殊カタカナに特化して対応文字の存否チェック
+		// 一旦、UTF8 -> YSF特殊文字 -> UTF8　と変換をして、元に戻るかどうかで検証する。
+		CYsfCodeConverter converter = CYsfCodeConverter.getInstance() ;
+		String finalDescription = converter.ysfByte2Utf8(converter.utf82YsfByte(params.getDescription2Change().trim()));
+		if (finalDescription!=null && !finalDescription.equals(params.getDescription2Change()) ) {
+			errorMessageList.add("「記述」に使えない文字がありましたので、「$」に置き換えてあります。");
+			params.setDescription2Change(finalDescription);
+		}
+		// Description 中間にあるSPACE文字は、なぜかFTM-300の暴走を引き起こすので、アンダースコアに置換しておく。
+		params.setDescription2Change(finalDescription.replaceAll(" ", "_"));
+		
+		
 		fs.changeDescription(params.getTargetImageId(),params.getDescription2Change());
 		fs.saveAll(errorMessageList);
 		fs.reNumberAndPrepareForDisplay();

@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.*;
 import lombok.Getter;
 import lombok.Setter;
+import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 
 public class CImageEntry {
@@ -153,7 +154,7 @@ public class CImageEntry {
 		date = subBytes(source, 0x3a, 0x3f);
 		this.baseDate = dateFromYaesuExp(date);
 		byte[] description = subBytes(source, 0x40, 0x4A);
-		this.description = new String(description);
+		this.description = CYsfCodeConverter.getInstance().ysfByte2Utf8(description).trim();
 		byte[] pictureSize = subBytes(source, 0x50, 0x53);
 		this.pictureSize = (int) ((pictureSize[0] << 24) & 0xff000000) + (int) ((pictureSize[1] << 16) & 0xff0000)
 				+ (int) ((pictureSize[2] << 8) & 0xff00) + (int) (pictureSize[3] & 0xff);
@@ -380,9 +381,10 @@ public class CImageEntry {
 		date2ByfferPoint(baseDate, 0x3a);
 
 		// １１バイトを超えたら、１１バイトでシールする。
-		if (description.length() > 11)
-			description = description.substring(0, 11);
-		binData = description.getBytes(StandardCharsets.UTF_8);
+//		if (description.length() > 11)
+//			description = description.substring(0, 11);
+//		binData = description.getBytes(StandardCharsets.UTF_8);
+		binData = CYsfCodeConverter.getInstance().utf82YsfByte(description);
 		binData = fillWithByteOf(binData, (byte) 0x20, 11);
 		bytes2ByfferPoint(binData, 0x40, 11);
 		// 0x20で埋めるところ

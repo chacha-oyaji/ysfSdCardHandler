@@ -7,7 +7,7 @@
 		$("#dlgDetailDialog").dialog({
 			autoOpen : false,
 			minWidth : 680,
-			minHeight : 800
+			minHeight : 400
 		});
 		resetByDetailMode();
 		hideOrShowPseudoDeleted();
@@ -108,12 +108,19 @@
 			</tr>
 			<tr style="display: none;" id="trSourceOfChangeDescription">
 				<th>記述変更指示</th>
-				<td style="text-align: left;"><input type="text"
-					id="txtSourceOfChangeDescription" style="width: 16em;"
+				<td style="text-align: left;">
+					<input type="text" id="txtSourceOfChangeDescription"
+					style="width: 14em; float: left;"
 					oninput="executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol');">
 					<button type="button" onclick="requestChangeDescription();"
-						style="background-color: #ccf;">変更実行</button> <br />
-					<div id="txtDescriptionLiteralVol"></div></td>
+						style="background-color: #ccf;">変更実行</button> 					<button type="button"
+						onclick="$('#divLiteralExplainInDetail').toggle();">使用文字の説明</button><br />
+					<div id="txtDescriptionLiteralVol"></div>
+					<div id="divLiteralExplainInDetail"
+						style="display: none; background-color: #fcc;"
+						onclick="$('#divLiteralExplainInDetail').hide();">「記述」欄で使用できる文字列は、半角の英数字(0～9,a～z,A～Z)
+						、半角の特殊文字（!"#$%&\'()*+,-./）、並びに全角のカタカナに限ります。</div>
+				</td>
 			</tr>
 			<tr>
 				<th>記録日時</th>
@@ -163,7 +170,7 @@
 					th:class="${entity.active?'cDivShowImage':'cDivHideImage'}"
 					th:style="|float: left; margin: 2px;border:${entity.borderDefinition()};background-color:${entity.backgroundDefinition}; text-align: center;|">
 					<div th:text="${entity.description}"
-						style="text-align: center; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></div>
+						style="text-align: center; max-width: 9em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; height: 1.2em;"></div>
 					<img
 						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
 						style="width: 160px; height: 120px; margin: 5px; position: relative;"
