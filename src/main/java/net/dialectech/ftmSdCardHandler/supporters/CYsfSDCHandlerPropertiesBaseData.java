@@ -166,11 +166,23 @@ public class CYsfSDCHandlerPropertiesBaseData extends Properties {
 		return getStrQsoLogDirectoryPath() + CConst.STR_QSOPCTFAT;
 	}
 
+	public String getStrQsoMsgDirFilePath() {
+		return getStrQsoLogDirectoryPath() + CConst.STR_QSOMSGDIR;
+	}
+
+	public String getStrQsoMsgFatFilePath() {
+		return getStrQsoLogDirectoryPath() + CConst.STR_QSOMSGFAT;
+	}
+
+	public String getStrQsoMsgFilePath() {
+		return getStrQsoLogDirectoryPath() + CConst.STR_QSOMSG;
+	}
+
 	public String getStrSdCardIdHolderPath() {
 		return getStrQsoLogDirectoryPath() + CConst.STR_SDCARD_ID_HOLDER;
 	}
 
-	public void loadAll() throws IOException {
+	public void loadAllProperties() throws IOException {
 		Path propertyFilePath = Paths.get(CConst.STR_PROPERTY_FILE_PATH);
 
 		FileInputStream inputStream = new FileInputStream(propertyFilePath.toFile());
@@ -194,7 +206,12 @@ public class CYsfSDCHandlerPropertiesBaseData extends Properties {
 		listStepSize = Integer.parseInt(this.getProperty("listStepSize", "20"));
 	}
 
-	public void saveAll() throws IOException {
+	/**
+	 * saveAll()はこのシステムがもつプロパティをProperty Fileに記録する。実データを記録するわけではない。
+	 * 
+	 * @throws IOException
+	 */
+	public void saveAllProperties() throws IOException {
 		this.clear();
 		this.setProperty("browserPath", browserPath);
 		this.setProperty("imageMagickPath", imageMagickPath);

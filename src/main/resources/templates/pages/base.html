@@ -138,7 +138,7 @@ td.nrmBase {
 	function showDetailOnThisImage(data, imgUrl) {
 		$("#trSourceOfChangeDescription").hide();
 		$("#dlgDetailDialog").dialog("open");
-		$("#tdTxtImageId").text(data.imageId);
+		$("#tdTxtImageId").text(data.dataId);
 		$("#tdTxtSym").text(data.symMeaning);
 		$("#tdTxtMyCallSign").text(data.myCallSign);
 		$("#tdTxtDestination").text(data.destination);
@@ -155,22 +155,27 @@ td.nrmBase {
 		// 画像にQRコードが含まれていて、このコードにURLが含まれている場合、並びにEMailAddressが含まれている場合
 		var additionalButtons = "";
 		var color = null;
-		if (data.includedURL != null || data.includedEMailAddress != null) {
-			if (data.includedURL != null) {
-				additionalButtons += "<button type=\"button\" onclick=\"window.open('"
-						+ data.includedURL
-						+ "','','noreferrer');\">URL先を参照</button>";
-				color = "yellow";
+		if ((data.includedURL != null && data.includedURL.length>0) || (data.includedEMailAddress != null && data.includedEMailAddress.length>0)) {
+			if ((data.includedURL != null && data.includedURL.length>0) ) {
+				var count=1 ;
+				data.includedURL.forEach (function(target) {
+					additionalButtons += "<button type=\"button\" onclick=\"window.open('"
+							+ target
+							+ "','','noreferrer');\">URL先(" + count++ + ")を参照</button>";
+					color = "yellow";
+				});
 			}
-			if (data.includedEMailAddress != null) {
-				additionalButtons += "<button type=\"button\" onclick=\"location.href=\'mailto:"
-						+ data.includedEMailAddress
-						+ "?subject=mail from "
-						+ data.myCallSign + "\'\">EMailを作成</button>";
-				color = "#8f8";
+			if ((data.includedEMailAddress != null && data.includedEMailAddress.length>0)) {
+				var count=1 ;
+				data.includedEMailAddress.forEach (function(target) {
+					additionalButtons += "<button type=\"button\" onclick=\"location.href=\'mailto:"
+							+ target
+							+ "?subject=mail from "
+							+ data.myCallSign + "\'\">EMail(" + count++ + ")を作成</button>";
+					color = "#8f8";
+				});
 			}
-			if ((data.includedURL != null)
-					&& (data.includedEMailAddress != null))
+			if ((data.includedURL != null && data.includedURL.length>0) && (data.includedEMailAddress != null && data.includedEMailAddress.length>0))
 				color = "#aff";
 			$("#tdTxtQRStringHtml").html(
 					additionalButtons + "<br/>" + data.qrStringHtml);
@@ -198,10 +203,10 @@ td.nrmBase {
 		// 画像そのもののURLを設定
 		$("#imgOnDetailDescription").attr('src', imgUrl)
 		// 各種指示・設定用のリクエストform にこのimageIdを設定
-		$("#txtImageIdOfDelete").val(data.imageId);
-		$("#txtImageIdOfDeleteCompletely").val(data.imageId);
-		$("#txtImageIdOfRecover").val(data.imageId);
-		$("#txtImageIdOfChangeDescription").val(data.imageId);
+		$("#txtImageIdOfDelete").val(data.dataId);
+		$("#txtImageIdOfDeleteCompletely").val(data.dataId);
+		$("#txtImageIdOfRecover").val(data.dataId);
+		$("#txtImageIdOfChangeDescription").val(data.dataId);
 	}
 
 	function confirmCompleteDeleteAndExec() {
@@ -296,7 +301,7 @@ td.nrmBase {
 	}
 
 	function requestChangeDescription() {
-		// txtImageIdOfChangeDescriptionには、showDetailOnThisImage()が設置しているので設定の必要性なし。
+		// txtDataIdOfChangeDescriptionには、showDetailOnThisImage()が設置しているので設定の必要性なし。
 		var sourceString = $("#txtSourceOfChangeDescription").val();
 
 		$("#txtDestinationOfChangeDescription").val(
@@ -308,6 +313,12 @@ td.nrmBase {
 		// var sourceString = $("#txtQRDescription").val();
 		submitAndStore2Target('frmQRCodeUpload', 'divImageGallery');
 		$('#dlgQRCodeInputDialog').dialog('close');
+	}
+	
+	function processMount(){
+		$('#dlgDetailDialog').dialog('close');
+		submitAndStore2Target('frmLoadSDCard4Pict','divImageGallery');
+		submitAndStore2Target('frmLoadSDCard4Msg','divMessageGallery');
 	}
 </script>
 </head>
@@ -347,10 +358,10 @@ td.nrmBase {
 					<option value="160">160×120</option>
 					<option value="320" selected>320×240</option>
 				</select>誤り訂正レベル<select name="errorCorrectionLevel">
-					<option value="H">強　(30%までの訂正能力)</option>
+					<option value="H">強 (30%までの訂正能力)</option>
 					<option value="Q" selected>中強(25%までの訂正能力)</option>
-					<option value="M">中　(15%までの訂正能力)</option>
-					<option value="L">弱　(7%までの訂正能力)</option>
+					<option value="M">中 (15%までの訂正能力)</option>
+					<option value="L">弱 (7%までの訂正能力)</option>
 				</select>
 			</div>
 			<div
@@ -369,7 +380,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405170837
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202405XX
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
@@ -379,15 +390,16 @@ td.nrmBase {
 					<ul>
 						<li><a href="#tab1">画像処理</a></li>
 						<li><a href="#tab2">BANK処理</a></li>
-						<li><a href="#tab3">対象設定</a></li>
+						<li><a href="#tab3">MESSAGE処理</a></li>
+						<li><a href="#tab4">音声再生</a></li>
+						<li><a href="#tab5">対象設定</a></li>
 					</ul>
 					<div id="tab1">
 						<div
 							style="display: flex; width: 100%; justify-content: center; align-items: center;">
 
 							<div>
-								<button id="btnMountAndLoad"
-									onclick="$('#dlgDetailDialog').dialog('close');submitAndStore2Target('frmLoadSDCard','divImageGallery');"
+								<button id="btnMountAndLoad" onclick="processMount();"
 									style="margin-right: 10px;">MOUNT</button>
 								<br />
 								<button id="btnOpenQRCodeInputDialog"
@@ -405,7 +417,7 @@ td.nrmBase {
 									id="cbToggleHidePseudoDeleted"
 									onchange="hideOrShowPseudoDeleted();">疑似消去表示</label>
 							</div>
-							<form id="frmLoadSDCard" method="post"
+							<form id="frmLoadSDCard4Pict" method="post"
 								th:action="@{/execute/mountAndLoadPresentImages}"
 								enctype="multipart/form-data">
 								<input type="hidden" id="txtDriveName1" class="cTxtDriveName"
@@ -415,6 +427,10 @@ td.nrmBase {
 									class="cTxtTopLetterOfPhotoFile" name="topLetterOfPhotoFile">
 								<input type="hidden" id="txtMyCallSign1" class="cTxtMyCallSign"
 									name="myCallSign">
+							</form>
+							<form id="frmLoadSDCard4Msg" method="post"
+								th:action="@{/execute/mountAndLoadPresentMessages}"
+								enctype="multipart/form-data">
 							</form>
 							<form id="frmUploadNewImages" method="post"
 								th:action="@{/execute/uploadNewImages}"
@@ -503,6 +519,25 @@ td.nrmBase {
 						<div id="divDirectoryList4Bank"></div>
 					</div>
 					<div id="tab3">
+						<div style="">
+							<div>
+								<button type="button" onclick="processMount();">MOUNT</button>
+								<textarea id="txtMessage2Send"></textarea><button type="button" onclick="processMount();">記録</button>
+							</div>
+						</div>
+						<hr>
+						<div id="divMessageGallery"></div>
+					</div>
+					<div id="tab4">
+						<div style="">
+							<button type="button" onclick="">MOUNT</button>
+							<audio id="audioPlayer" controls></audio>
+							<div id="dvWaveList"></div>
+						</div>
+
+					</div>
+
+					<div id="tab5">
 						<div style="float: left;">
 							<form id="frmSettlement" method="post"
 								th:action="@{/execute/settleOfProperty}"

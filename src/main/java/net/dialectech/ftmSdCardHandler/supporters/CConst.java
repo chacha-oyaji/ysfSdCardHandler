@@ -10,8 +10,12 @@ public class CConst {
 	public static final String defaultOffset4Debug = "DriveF" + File.separator;
 	public static final String STR_BRANCH_NAME_HOLDER = "branchNameHolder.dat";
 	public static final String STR_SDCARD_ID_HOLDER = "sdCardId.dat";
+	
 	public static final String STR_QSOPCTDIR = "QSOPCTDIR.dat";
 	public static final String STR_QSOPCTFAT = "QSOPCTFAT.dat";
+	public static final String STR_QSOMSGDIR = "QSOMSGDIR.dat";
+	public static final String STR_QSOMSGFAT = "QSOMSGFAT.dat";
+	public static final String STR_QSOMSG = "QSOMSG.dat";
 	public static final String STR_QSOMNG = "QSOMNG.dat";
 
 	public static final String STR_DISP_Program_Name = "Yaesu System FusionⓇ SdCard Handler programmed by JI1BXM";

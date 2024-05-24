@@ -3,6 +3,7 @@ package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,7 @@ import com.google.zxing.common.HybridBinarizer;
 import lombok.Getter;
 import lombok.Setter;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
+import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltImageIO;
@@ -39,8 +41,9 @@ public class CYsfFileSystemCorePart {
 
 	private CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 
-	private byte[] pictMgr;
+	private byte[] generalMgr; // QSOMGRファイル内のデータをそのまま保持
 
+	// PICT関連のデータ列
 	@Getter
 	@Setter
 	private LinkedList<CImageEntry> pctDirListWithDisplayOrder;
@@ -48,16 +51,23 @@ public class CYsfFileSystemCorePart {
 	@Setter
 	private LinkedList<CImageEntry> pctDirList;
 	File dirPhoto = null;
-	@Getter
-	@Setter
-	File[] includedFileList;
-	@Getter
-	@Setter
-	private CImageManager pctManager;
-
 	@Setter
 	@Getter
 	private int presentMaxNumberInFileName = 0;
+	@Getter
+	@Setter
+	File[] includedFileList;
+
+	// MESSAGE関連のデータ列
+	@Getter
+	@Setter
+	private LinkedList<CMessageEntry> msgDirListWithDisplayOrder;
+	@Getter
+	@Setter
+	private LinkedList<CMessageEntry> msgDirList;
+	@Setter
+	@Getter
+	private int presentMaxNumberInMessage = 0;
 
 	// sdCardIDは、現在把握しているSD-CARDのIDを記録。mount時にSD-CARDから読み込む。各リクエストを処理するときに直前でSD-CARDのIDを読み込んで、
 	// このIDと異なるIDであるSD-CARDであれば、MOUNT処理を経ていないので、エラーとして処理できることになる。
@@ -75,28 +85,29 @@ public class CYsfFileSystemCorePart {
 		System.out.println("coreBase Constructor: " + this.toString());
 	}
 
-	public CImageEntry addNewFile(String myCallSign,String description2Change) {
+	public CImageEntry addNewFile(String myCallSign, String description2Change) {
 		String newFileName = createNewFileNameByIndex(++presentMaxNumberInFileName);
 		CImageEntry newImageDirData = new CImageEntry(prop.getRadioId(), myCallSign, "", newFileName,
-				presentMaxNumberInFileName,description2Change);
+				presentMaxNumberInFileName, description2Change);
 		newImageDirData.storeOwnData2BufferedBytes();
 
 		pctDirListWithDisplayOrder.addFirst(newImageDirData);
 		pctDirList.addLast(newImageDirData);
 		includedFileList = dirPhoto.listFiles();
-		reNumberAndPrepareForDisplay();
+		reNumberAndPrepareForPictureDisplay();
 
 		return newImageDirData;
 	}
 
 	public void changeDescription(int targetImageId, String description2Change) {
 		for (CImageEntry d : pctDirList) {
-			if (d.getImageId() == targetImageId) {
+			if (d.getDataId() == targetImageId) {
 				d.setDescription(description2Change);
 				break;
 			}
 		}
 	}
+
 	/**
 	 * void clearAll()
 	 * 
@@ -108,6 +119,8 @@ public class CYsfFileSystemCorePart {
 	public void clearAll() {
 		pctDirListWithDisplayOrder = new LinkedList<CImageEntry>();
 		pctDirList = new LinkedList<CImageEntry>();
+		msgDirListWithDisplayOrder = new LinkedList<CMessageEntry>();
+		msgDirList = new LinkedList<CMessageEntry>();
 		presentMaxNumberInFileName = 0;
 		active = false;
 	}
@@ -178,6 +191,7 @@ public class CYsfFileSystemCorePart {
 	 * @return 正常終了ならnull、エラーがあったら、その内容
 	 */
 	public String loadFromSDCard() {
+
 		presentMaxNumberInFileName = 0;
 
 		File qsoPctDir;
@@ -189,6 +203,24 @@ public class CYsfFileSystemCorePart {
 		qsoPctFat = new File(prop.getStrQsoPctFatFilePath());
 		if (!qsoPctFat.exists())
 			return "QSOPCTFAT.datが見つかりません";
+
+		File qsoMsgDir;
+		qsoMsgDir = new File(prop.getStrQsoMsgDirFilePath());
+		if (!qsoMsgDir.exists()) {
+			return"QSOMSGDIR.datが見当たりません。";
+		}
+
+		File qsoMsgFat;
+		qsoMsgFat = new File(prop.getStrQsoMsgFatFilePath());
+		if (!qsoMsgFat.exists()) {
+			return"QSOMSGFAT.datが見当たりません。";
+		}
+
+		File qsoMsg;
+		qsoMsg = new File(prop.getStrQsoMsgFilePath());
+		if (!qsoMsg.exists()) {
+			return"QSOMSG.datが見当たりません。";
+		}
 
 		File qsoMgr;
 		qsoMgr = new File(prop.getStrQsoMngFilePath());
@@ -216,15 +248,15 @@ public class CYsfFileSystemCorePart {
 				if (pictFatImage.length == 0)
 					break;
 
-				int startAddress = (int) ((pictFatImage[1] << 16) & 0x00ff0000)
+				int startAddressOrDirectoryEntry = (int) ((pictFatImage[1] << 16) & 0x00ff0000)
 						+ (int) ((pictFatImage[2] << 8) & 0xff00) + (int) (pictFatImage[3] & 0xff);
-				if (startAddress == 0xffffff) {
+				if (startAddressOrDirectoryEntry == 0xffffff) {
 					if (fatCheckMap.get(index * CConst.BYTESIZE_PER_DIR_ENTRY) == null)
 						fatCheckMap.put(index * CConst.BYTESIZE_PER_DIR_ENTRY, false);
 					else
-						System.out.println("FAT CORRUPSED? Duplicate location data.");
+						System.out.println("Picture FAT CORRUPSED? Duplicate location data.");
 				} else
-					fatCheckMap.put(startAddress, true);
+					fatCheckMap.put(startAddressOrDirectoryEntry, true);
 			}
 
 			// 次にdirを読みこむ。特にFATとの整合性は求めずに、QSOPCTDIRのみで構成する。
@@ -258,7 +290,7 @@ public class CYsfFileSystemCorePart {
 			}
 
 			// 最後に、pctMgrを読み込む。
-			pictMgr = fisMgr.readAllBytes();
+			generalMgr = fisMgr.readAllBytes();
 		} catch (IOException e) {
 			// TODO
 			e.printStackTrace();
@@ -279,12 +311,79 @@ public class CYsfFileSystemCorePart {
 				}
 			}
 		}
+		// 次に、PICT絡みでの二重管理チェック。()
+		reNumberAndPrepareForPictureDisplay();
 
-		// pctDirListWithOrderは時間でソーティングするが、pctDirListの方は配置の通りにするので、弄らない。
+		// *********************************************************************************************************
+		// ここから、Message関連処理を行う。
+		// *********************************************************************************************************
 
-		// 次に、二重管理チェック。()
+		try (FileInputStream fisMsgDir = new FileInputStream(qsoMsgDir);
+				FileInputStream fisMsgFat = new FileInputStream(qsoMsgFat);
+				FileInputStream fisMsg = new FileInputStream(qsoMsg);) {
 
-		reNumberAndPrepareForDisplay();
+			msgDirListWithDisplayOrder = new LinkedList<CMessageEntry>();
+			msgDirList = new LinkedList<CMessageEntry>();
+
+			// まずはfatを取り込んで、チェッカーを生成する。
+			// fat の容量(バイト量でなく、情報数で表している。)から全体のDIRエントリ数を把握してみる。
+			int dirEntryVolume = (int) ((qsoMsgFat.length() & 0xffff) / CConst.BYTESIZE_PER_FAT); // FATでは１エントリあたり「４」バイトで表現される。
+			LinkedHashMap<Integer, Boolean> fatCheckMap = new LinkedHashMap<Integer, Boolean>(); // キーはディレクトリエントリの開始番地（絶対番地）
+			for (int index = 0; index < dirEntryVolume; ++index) {
+				byte[] msgFat = fisMsgFat.readNBytes(CConst.BYTESIZE_PER_FAT);
+				if (msgFat.length == 0)
+					break;
+
+				int startAddressOrDirectoryEntry = (int) ((msgFat[1] << 16) & 0x00ff0000)
+						+ (int) ((msgFat[2] << 8) & 0xff00) + (int) (msgFat[3] & 0xff);
+				if (startAddressOrDirectoryEntry == 0xffffff) {
+					if (fatCheckMap.get(index * CConst.BYTESIZE_PER_DIR_ENTRY) == null)
+						fatCheckMap.put(index * CConst.BYTESIZE_PER_DIR_ENTRY, false);
+					else
+						System.out.println("Message FAT CORRUPSED? Duplicate location data.");
+				} else
+					fatCheckMap.put(startAddressOrDirectoryEntry, true);
+			}
+
+			// 次にdirを読みこむ。特にFATとの整合性は求めずに、QSOMSGDIRのみで構成する。
+			
+			// まずは、全メッセージを一気読み
+			byte[] wholeMessageData = fisMsg.readAllBytes();
+			
+			// 続いて、
+			for (int index = 0;; ++index) {
+				byte[] msgDirectories = fisMsgDir.readNBytes(CConst.BYTESIZE_PER_DIR_ENTRY);
+				if (msgDirectories.length == 0) {
+					// データをすいだせなかったら、もうこれ以上の情報はなし。
+					break;
+				}
+				// まずは管理データを生成。
+				CMessageEntry messageEntry = new CMessageEntry(msgDirectories, index,wholeMessageData);
+
+				// 生成されたデータが新規ファイルで、ファイル名中の数値が従来分より大きかったら、このファイルシステム中での最大値として記録される。
+
+				int dirPositionAddress = index * CConst.BYTESIZE_PER_DIR_ENTRY;
+				Boolean dataExist = fatCheckMap.get(dirPositionAddress);
+				if (dataExist == null) {
+					messageEntry.setAbsDirPos(-1); // ファイルがないなら、絶対番地を-1に設定する。
+				} else {
+					messageEntry.setAbsDirPos(index * CConst.BYTESIZE_PER_DIR_ENTRY);
+					if (dataExist) {
+						messageEntry.setActive(true);
+					} else {
+						messageEntry.setActive(false);
+					}
+				}
+				msgDirListWithDisplayOrder.addFirst(messageEntry);
+				msgDirList.add(messageEntry);
+			}
+			
+			
+		} catch (IOException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
+
 		return null;
 	}
 
@@ -292,7 +391,7 @@ public class CYsfFileSystemCorePart {
 		Hashtable<DecodeHintType, Object> decodeHints = new Hashtable<DecodeHintType, Object>();
 		decodeHints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
 		BufferedImage image;
-		String context ;
+		String context;
 		try (FileInputStream fileInputStream = new FileInputStream(partBim);) {
 			CDltImageIO imageHandler = CDltImageIO.getInstance();
 			image = imageHandler.readInputStream2BufferedImage(fileInputStream);
@@ -404,7 +503,7 @@ public class CYsfFileSystemCorePart {
 
 		// 次に、二重管理チェック。()
 
-		reNumberAndPrepareForDisplay();
+		reNumberAndPrepareForPictureDisplay();
 		return null;
 	}
 
@@ -412,11 +511,11 @@ public class CYsfFileSystemCorePart {
 		LinkedHashMap<String, CImageEntry> realFileName2DuplicationCheck = new LinkedHashMap<String, CImageEntry>(); // ファイル名、pctDirEntry実体
 		CImageEntry matchedData;
 		for (CImageEntry ie : pctDirList) {
-			if (ie.getImageId() == -1)
+			if (ie.getDataId() == -1)
 				continue;
 			ie.setDuplicateOf(null);
 			if ((matchedData = realFileName2DuplicationCheck.get(ie.getFileCoreName())) != null) {
-				ie.setDuplicateOf(String.valueOf(matchedData.getImageId()));
+				ie.setDuplicateOf(String.valueOf(matchedData.getDataId()));
 			} else {
 				realFileName2DuplicationCheck.put(ie.getFileCoreName(), ie);
 			}
@@ -446,7 +545,7 @@ public class CYsfFileSystemCorePart {
 	 * 但し、転写の際には、新しいファイルを前、古いファイルが後になるように、逆順ソートを行う。
 	 * 
 	 */
-	public void reNumberAndPrepareForDisplay() {
+	public void reNumberAndPrepareForPictureDisplay() {
 		// この時点で、pctDirListからpctDirListWithDisplayOrderにデータを移動させた上で、ソーティングしてから管理ＩＤを振ることにする。
 		pctDirListWithDisplayOrder = new LinkedList<CImageEntry>();
 		for (CImageEntry elem : pctDirList) {
@@ -485,14 +584,59 @@ public class CYsfFileSystemCorePart {
 		// Browserから画像を特定するための管理番号を再付与する。
 		int index = 0;
 		for (CImageEntry elem : pctDirListWithDisplayOrder) {
-			elem.setImageId(++index);
+			elem.setDataId(++index);
 			elem.storeOwnData2BufferedBytes();
 		}
 		// 重複管理のマーキングをする。
 		markDuplicateFileHandling();
 	}
 
-	public void saveAll(LinkedList<String> errorMessageList) {
+	public void saveAllOfFilesOnMessage(LinkedList<String> errorMessageList) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+
+		if (errorMessageList == null || errorMessageList.size() > 0) {
+			return;
+		}
+		if (!isActive()) {
+			errorMessageList.add("先にMOUNT/LOADを実行してください。");
+			return;
+		}
+
+		File qsoMsgDir;
+		qsoMsgDir = new File(prop.getStrQsoMsgDirFilePath());
+		if (!qsoMsgDir.exists()) {
+			errorMessageList.add("QSOMSGDIR.datが見当たりません。");
+			return;
+		}
+
+		File qsoMsgFat;
+		qsoMsgFat = new File(prop.getStrQsoMsgFatFilePath());
+		if (!qsoMsgFat.exists()) {
+			errorMessageList.add("QSOMSGFAT.datが見当たりません。");
+			return;
+		}
+
+		File qsoMgr;
+		qsoMgr = new File(prop.getStrQsoMngFilePath());
+		if (!qsoMgr.exists()) {
+			errorMessageList.add("QSOMNG.datが見当たりません。");
+			return;
+		}
+
+		int efficientDirSize = defragmentationOfPctDirList();
+
+		try (FileOutputStream fos4Dir = new FileOutputStream(qsoMsgDir);
+				FileOutputStream fos4Fat = new FileOutputStream(qsoMsgFat);) {
+
+			saveDirAndFatOn(msgDirList, fos4Dir, fos4Fat, efficientDirSize);
+			saveGeneralManager(qsoMgr, presentMaxNumberInMessage, presentMaxNumberInFileName, efficientDirSize);
+		} catch (Exception e) {
+			System.out.println("ERROR on PICT Concerning File Manupilation: " + e.getLocalizedMessage());
+		}
+
+	}
+
+	public void saveAllOfFilesOnPict(LinkedList<String> errorMessageList) {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 
 		if (errorMessageList == null || errorMessageList.size() > 0) {
@@ -510,13 +654,6 @@ public class CYsfFileSystemCorePart {
 			return;
 		}
 
-		File qsoPctMgr;
-		qsoPctMgr = new File(prop.getStrQsoMngFilePath());
-		if (!qsoPctMgr.exists()) {
-			errorMessageList.add("QSOMNG.datが見当たりません。");
-			return;
-		}
-
 		File qsoPctFat;
 		qsoPctFat = new File(prop.getStrQsoPctFatFilePath());
 		if (!qsoPctFat.exists()) {
@@ -524,64 +661,87 @@ public class CYsfFileSystemCorePart {
 			return;
 		}
 
+		File qsoMgr;
+		qsoMgr = new File(prop.getStrQsoMngFilePath());
+		if (!qsoMgr.exists()) {
+			errorMessageList.add("QSOMNG.datが見当たりません。");
+			return;
+		}
+
 		int efficientDirSize = defragmentationOfPctDirList();
 
 		try (FileOutputStream fos4Dir = new FileOutputStream(qsoPctDir);
-				FileOutputStream fos4Fat = new FileOutputStream(qsoPctFat);
-				FileOutputStream fos4Mng = new FileOutputStream(qsoPctMgr)) {
+				FileOutputStream fos4Fat = new FileOutputStream(qsoPctFat);) {
 
-			// QSOPCTFAT再生成
-			byte[] fatData = new byte[4 * efficientDirSize];
-			int index = 0;
-			int indexCount = 0;
-			int presentWholeDirVolume = pctDirList.size();
-			for (int i = 0; i < presentWholeDirVolume; ++i) {
-				CImageEntry target = pctDirList.get(i);
-				if (target.isRealFileExists()) {
-					if (target.isActive()) {
-						fatData[index++] = 0x40;
-						fatData[index++] = (byte) (((indexCount * 128) & 0xff0000) >> 16);
-						fatData[index++] = (byte) (((indexCount * 128) & 0xff00) >> 8);
-						fatData[index++] = (byte) ((indexCount * 128) & 0xff);
-						target.setImageId(indexCount + 1);
-					} else {
-						fatData[index++] = (byte) 0xff;
-						fatData[index++] = (byte) 0xff;
-						fatData[index++] = (byte) 0xff;
-						fatData[index++] = (byte) 0xff;
-					}
-					indexCount++;
-				}
-			}
-			fos4Fat.write(fatData);
+			saveDirAndFatOn(pctDirList, fos4Dir, fos4Fat, efficientDirSize);
+			saveGeneralManager(qsoMgr, presentMaxNumberInMessage, presentMaxNumberInFileName, efficientDirSize);
+		} catch (Exception e) {
+			// TODO 自動生成された catch ブロック
+			System.out.println("ERROR on PICT Concerning File Manupilation: " + e.getLocalizedMessage());
+		}
 
-			// QSOPCTDIRの生成
-			for (CImageEntry elem : pctDirList) {
-				if (elem.isRealFileExists()) {
-					elem.storeOwnData2BufferedBytes();
-					fos4Dir.write(elem.getImageEntry());
-				}
-			}
+	}
 
-			// QSOPCTMNGの生成
-			// 次の書き込みファイル名が決定されるので、これで対応。デフラグしないなら、これも書き換える必要がある。
-			int nextPointer2Write = presentMaxNumberInFileName + 1;
-			pictMgr[0x12] = (byte) (((nextPointer2Write + 1) >> 8) & 0xff);
-			pictMgr[0x13] = (byte) (nextPointer2Write & 0xff);
+	private void saveGeneralManager(File qsoMgr, int presentMaxNumberInMessage, int presentMaxNumberInPictFileName,
+			int efficientDirSize) throws IOException {
+		// 最後にQSOPCTMNGの生成
+		// 次の書き込みファイル名が決定されるので、これで対応。デフラグしないなら、これも書き換える必要がある。
+		try (FileOutputStream fos4Mng = new FileOutputStream(qsoMgr);) {
+
+			generalMgr[0x00] = (byte) ((presentMaxNumberInMessage >> 8) & 0xff);
+			generalMgr[0x01] = (byte) ((presentMaxNumberInMessage) & 0xff);
 
 			if (efficientDirSize > 0) {
-				pictMgr[0x10] = (byte) ((efficientDirSize >> 8) & 0xff);
-				pictMgr[0x11] = (byte) (efficientDirSize & 0xff);
+				generalMgr[0x10] = (byte) ((efficientDirSize >> 8) & 0xff);
+				generalMgr[0x11] = (byte) (efficientDirSize & 0xff);
 			} else {
-				pictMgr[0x10] = (byte) 0xff;
-				pictMgr[0x11] = (byte) 0xff;
+				generalMgr[0x10] = (byte) 0xff;
+				generalMgr[0x11] = (byte) 0xff;
 			}
-			fos4Mng.write(pictMgr);
 
+			int nextNumberInFileName2Write = presentMaxNumberInPictFileName + 1;
+			generalMgr[0x12] = (byte) ((nextNumberInFileName2Write >> 8) & 0xff);
+			generalMgr[0x13] = (byte) ((nextNumberInFileName2Write) & 0xff);
+
+			fos4Mng.write(generalMgr); // 実ファイルへの書き込みはMSG関連の処理をする時点で。
 		} catch (IOException e) {
-			// TODO 自動生成された catch ブロック
-			System.out.println("ERROR : " + e.getLocalizedMessage());
+			System.out.println("ERROR on PICT Concerning File Manupilation: QSOMGR.dat : " + e.getLocalizedMessage());
+			throw new IOException();
 		}
 	}
 
+	private <CDE extends CDataEntry> void saveDirAndFatOn(LinkedList<CDE> dirList, FileOutputStream fos4Dir,
+			FileOutputStream fos4Fat, int efficientDirSize) throws Exception {
+		// QSOMSGFAT再生成
+		byte[] fatData = new byte[4 * efficientDirSize];
+		int index = 0;
+		int indexCount = 0;
+		int presentWholeDirVolume = dirList.size();
+		for (int i = 0; i < presentWholeDirVolume; ++i) {
+			CDataEntry target = dirList.get(i);
+			if (target.isRealFileExists()) {
+				if (target.isActive()) {
+					fatData[index++] = 0x40;
+					fatData[index++] = (byte) (((indexCount * 128) & 0xff0000) >> 16);
+					fatData[index++] = (byte) (((indexCount * 128) & 0xff00) >> 8);
+					fatData[index++] = (byte) ((indexCount * 128) & 0xff);
+					target.setDataId(indexCount + 1);
+				} else {
+					fatData[index++] = (byte) 0xff;
+					fatData[index++] = (byte) 0xff;
+					fatData[index++] = (byte) 0xff;
+					fatData[index++] = (byte) 0xff;
+				}
+				indexCount++;
+			}
+		}
+		fos4Fat.write(fatData);
+
+		// QSOMSGDIRの生成
+		for (CDataEntry elem : dirList) {
+			elem.storeOwnData2BufferedBytes();
+			fos4Dir.write(elem.getDataEntry());
+		}
+
+	}
 }

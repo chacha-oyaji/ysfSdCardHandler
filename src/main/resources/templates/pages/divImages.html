@@ -33,14 +33,14 @@
 	<!--/* 原画像ファイルとDIR情報を残しつつ、削除マークをつけるだけの処理のリクエスト*/-->
 	<form id="frmDeleteMarking" method="post"
 		th:action="@{/execute/deleteMarking}">
-		<input type="hidden" id="txtImageIdOfDelete" name="targetImageId"
+		<input type="hidden" id="txtImageIdOfDelete" name="targetDataId"
 			value="test">
 	</form>
 	<!--/* 原画像ファイルとDIR情報を跡形もなく完全に削除する処理のリクエスト*/-->
 	<form id="frmCompleteDeleteAndExec" method="post"
 		th:action="@{/execute/deleteCompletely}">
 		<input type="hidden" id="txtImageIdOfDeleteCompletely"
-			name="targetImageId" value="test">
+			name="targetDataId" value="test">
 	</form>
 	<!--/* DIR情報中の「記述」欄の修正を求めるリクエスト　*/-->
 	<form id="frmChangeDescription" method="post"
@@ -52,7 +52,7 @@
 	<!--/* DIR情報に削除マークが付けられた画像について、参照可能に復活させるためのリクエスト*/-->
 	<form id="frmRecoverMarking" method="post"
 		th:action="@{/execute/recoverMarking}">
-		<input type="hidden" id="txtImageIdOfRecover" name="targetImageId"
+		<input type="hidden" id="txtImageIdOfRecover" name="targetDataId"
 			value="test">
 	</form>
 	<div id="dlgDetailDialog" title="画像関連詳細情報">
@@ -108,19 +108,19 @@
 			</tr>
 			<tr style="display: none;" id="trSourceOfChangeDescription">
 				<th>記述変更指示</th>
-				<td style="text-align: left;">
-					<input type="text" id="txtSourceOfChangeDescription"
-					style="width: 14em; float: left;"
+				<td style="text-align: left;"><input type="text"
+					id="txtSourceOfChangeDescription" style="width: 14em; float: left;"
 					oninput="executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol');">
 					<button type="button" onclick="requestChangeDescription();"
-						style="background-color: #ccf;">変更実行</button> 					<button type="button"
-						onclick="$('#divLiteralExplainInDetail').toggle();">使用文字の説明</button><br />
+						style="background-color: #ccf;">変更実行</button>
+					<button type="button"
+						onclick="$('#divLiteralExplainInDetail').toggle();">使用文字の説明</button>
+					<br />
 					<div id="txtDescriptionLiteralVol"></div>
 					<div id="divLiteralExplainInDetail"
 						style="display: none; background-color: #fcc;"
 						onclick="$('#divLiteralExplainInDetail').hide();">「記述」欄で使用できる文字列は、半角の英数字(0～9,a～z,A～Z)
-						、半角の特殊文字（!"#$%&\'()*+,-./）、並びに全角のカタカナに限ります。</div>
-				</td>
+						、半角の特殊文字（!"#$%&\'()*+,-./）、並びに全角のカタカナに限ります。</div></td>
 			</tr>
 			<tr>
 				<th>記録日時</th>
@@ -178,7 +178,7 @@
 					<table class="CDetailScriptOfImage">
 						<tr>
 							<th>管理ID</th>
-							<td th:text="${entity.imageId}"></td>
+							<td th:text="${entity.dataId}"></td>
 						</tr>
 						<tr>
 							<th>SYM</th>
@@ -235,28 +235,32 @@
 							<th:block th:if="${entity.qrStringEscaped != null}">
 								<!--/* EMAILアドレスとURLとがある場合には、URLを優先してリンク */-->
 								<td
-									th:if="${entity.includedURL != null && entity.includedEMailAddress != null }"
-									th:onclick="window.open([[${entity.includedURL}]],'','noreferrer');">
+									th:if="${(entity.includedURL != null && entity.includedURL.size()>0)
+										 && (entity.includedEMailAddress != null && entity.includedEMailAddress.size()>0)}"
+									th:onclick="window.open([[${entity.includedURL.get(0)}]],'','noreferrer');">
 									<div th:utext="${entity.includedURL}"
 										style="cursor: pointer; background-color: #aff; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
 								</td>
 								<!--/* EMAILアドレスのみがある場合 */-->
 								<td
-									th:if="${entity.includedURL == null && entity.includedEMailAddress != null}"
-									th:onclick="executeMailTo([[${entity.includedEMailAddress}]],[[${entity.myCallSign}]]);">
-									<div th:utext="${entity.includedEMailAddress}"
+									th:if="${(entity.includedURL == null || entity.includedURL.size()==0)
+										 && (entity.includedEMailAddress != null && entity.includedEMailAddress.size()>0)}"
+									th:onclick="executeMailTo([[${entity.includedEMailAddress[0]}]],[[${entity.myCallSign}]]);">
+									<div th:utext="${entity.includedEMailAddress.get(0)}"
 										style="cursor: pointer; background-color: #8f8; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
 								</td>
 								<!--/* URLのみがある場合 */-->
 								<td
-									th:if="${entity.includedURL != null && entity.includedEMailAddress == null}"
-									th:onclick="window.open([[${entity.includedURL}]],'','noreferrer');">
+									th:if="${(entity.includedURL != null && entity.includedURL.size()>0)
+										 && (entity.includedEMailAddress == null || entity.includedEMailAddress.size()==0)}"
+									th:onclick="window.open([[${entity.includedURL.get(0)}]],'','noreferrer');">
 									<div th:utext="${entity.includedURL}"
 										style="cursor: pointer; background-color: yellow; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
 								</td>
 								<!--/* URLもEMAILアドレスもない場合 */-->
 								<td
-									th:if="${entity.includedURL == null && entity.includedEMailAddress == null}">
+									th:if="${(entity.includedURL == null || entity.includedURL.size()==0)
+										&& (entity.includedEMailAddress == null || entity.includedEMailAddress.size()==0)}">
 									<div th:utext="${entity.qrStringEscaped}"
 										style="background-color: #fcc; cursor: auto; max-width: 8em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left;"></div>
 								</td>

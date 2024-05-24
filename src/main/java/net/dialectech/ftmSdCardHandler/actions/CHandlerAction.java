@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -102,18 +101,18 @@ public class CHandlerAction {
 			return mav;
 		}
 
-		int targetImageId = param.getTargetImageId();
+		int targetDataId = param.getTargetDataId();
 		LinkedList<CImageEntry> dirListWDO = fs.getPctDirListWithDisplayOrder();
 
 		String targetDirName = prop.getStrPhotoDirectoryPath();
 
 		for (int index = 0; index < dirListWDO.size(); ++index) {
 			CImageEntry data = dirListWDO.get(index);
-			if (data.getImageId() == targetImageId) {
+			if (data.getDataId() == targetDataId) {
 				// 完全削除を指示されたターゲットdirEntryはdataに記録されている。
 				data.setActive(false);
 				// 完全Deleteした場合、戻せないように、通常の流れのimageIdと異なる番号（-1）を付与して、検索されないようにする。
-				data.setImageId(-1);
+				data.setDataId(-1);
 
 				// 二重に管理されているファイルは削除しない。
 				int volumeOfSameName = 0;
@@ -144,8 +143,8 @@ public class CHandlerAction {
 			}
 		}
 
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		mav.setViewName("pages/divImages");
@@ -166,19 +165,19 @@ public class CHandlerAction {
 			return mav;
 		}
 
-		int targetImageId = param.getTargetImageId();
+		int targetDataId = param.getTargetDataId();
 		LinkedList<CImageEntry> dirList = fs.getPctDirList();
 		for (int index = 0; index < dirList.size(); ++index) {
 			CImageEntry elem = dirList.get(index);
-			if (elem.getImageId() == targetImageId) {
+			if (elem.getDataId() == targetDataId) {
 				elem.setActive(false);
 				elem.storeOwnData2BufferedBytes();
 				break;
 			}
 		}
 
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		return mav;
@@ -252,6 +251,65 @@ public class CHandlerAction {
 		}
 	}
 
+	
+	@RequestMapping(value = "mountAndLoadPresentMessages", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataMountAndLoadPresentMessages(@ModelAttribute CData4Upload params, HttpSession session,
+			ModelAndView mav) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		String sdCardBaseDirectory = prop.getSdCardBaseDirName();
+		// String presentUsingBranchName = getPresentUsingBranchName(cardDrive);
+
+		// System.out.println(">>>" + presentUsingBranchName);
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		if (!(new File(sdCardBaseDirectory + "QSOLOG/")).exists()) {
+			errorMessageList.add("対応するSD-CARDが装着されていません。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			fs.clearAll();
+			return mav;
+		}
+
+		String errorMsg = null ; // fs.loadFromSDCard();
+		if (errorMsg != null) {
+			errorMessageList.add(errorMsg);
+			errorMessageList.add("SD-CARDの構成が不完全です。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			return mav;
+		}
+
+		// SD-CARD-IDファイルがなかった、新たにIDを生成して、それをSD-CARD-IDファイルに書きこんで、かつFileSystemにも登録する。
+
+		Path sdCardIdFile = Path.of(prop.getStrSdCardIdHolderPath());
+		if (sdCardIdFile.toFile().exists()) {
+			// SD-CARD-IDファイルがあったら、それを読みこんで、FileSystemに登録する。
+			List<String> contents;
+			try {
+				contents = Files.readAllLines(sdCardIdFile, StandardCharsets.UTF_8);
+				String mountedSdCardId = contents.getFirst();
+				fs.setSdCardID(mountedSdCardId);
+			} catch (IOException e) {
+				errorMessageList.add("SD-CARD中のIDファイルの読み出しに失敗しました。＞" + e.getLocalizedMessage());
+			}
+		} else {
+			// SD-CARD-IDファイルがなかった、新たにIDを生成して、それをSD-CARD-IDファイルに書きこんで、かつFileSystemにも登録する。
+			String presentSDCardID = UUID.randomUUID().toString().replaceAll("-", "");
+			String sdCardIdHolder = prop.getStrSdCardIdHolderPath();
+			try (FileOutputStream fo = new FileOutputStream(sdCardIdHolder);) {
+				fo.write(presentSDCardID.getBytes(StandardCharsets.UTF_8));
+				fs.setSdCardID(presentSDCardID);
+			} catch (IOException e) {
+				errorMessageList.add("SD-CARD中にIDファイルがなかったので作成しようとしましたが、その書き出しに失敗しました。＞" + e.getLocalizedMessage());
+			}
+		}
+
+		fs.setActive(true);
+		// 現時点でのSD-CARD上の画像情報はFileSystem:fsにあるから、そのままThymeleafに渡す。
+		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
+				"pages/divMessages");
+		return mav;
+	}
+	
 	/**
 	 * リクエスト：Mount/Loadボタンに対応するloadPresentImagesでの処理。
 	 * 
@@ -373,8 +431,8 @@ public class CHandlerAction {
 		fs.setPctDirList(new LinkedList<CImageEntry>());
 
 		// あとは表示用の後処理。SDCardにクリア済みのディレクトリデータの記録。
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 
@@ -456,8 +514,8 @@ public class CHandlerAction {
 			errorMessageList.add(errorMsg);
 
 		// あとは表示用の後処理。
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		return mav;
@@ -477,17 +535,17 @@ public class CHandlerAction {
 			return mav;
 		}
 
-		int targetImageId = param.getTargetImageId();
+		int targetDataId = param.getTargetDataId();
 		LinkedList<CImageEntry> dirList = fs.getPctDirListWithDisplayOrder();
 		for (int index = 0; index < dirList.size(); ++index) {
-			if (dirList.get(index).getImageId() == targetImageId) {
+			if (dirList.get(index).getDataId() == targetDataId) {
 				dirList.get(index).setActive(true);
 				dirList.get(index).storeOwnData2BufferedBytes();
 				break;
 			}
 		}
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		mav.setViewName("pages/divImages");
@@ -569,7 +627,7 @@ public class CHandlerAction {
 			prop.setStrOffset4Debug(param.getOffset4Debug());
 		}
 		try {
-			prop.saveAll();
+			prop.saveAllProperties();
 		} catch (IOException e) {
 			errorMessageList.add("プロパティファイルを書き込めませんでした。");
 		}
@@ -856,8 +914,8 @@ public class CHandlerAction {
 			e.printStackTrace();
 		}
 
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		return mav;
@@ -1066,9 +1124,9 @@ public class CHandlerAction {
 		params.setDescription2Change(finalDescription.replaceAll(" ", "_"));
 		
 		
-		fs.changeDescription(params.getTargetImageId(),params.getDescription2Change());
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.changeDescription(params.getTargetDataId(),params.getDescription2Change());
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		return mav;
@@ -1136,8 +1194,8 @@ public class CHandlerAction {
 		} else {
 			errorMessageList.add("少なくとも、ひとつの画像ファイルを指定してください。");
 		}
-		fs.saveAll(errorMessageList);
-		fs.reNumberAndPrepareForDisplay();
+		fs.saveAllOfFilesOnPict(errorMessageList);
+		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
 		return mav;

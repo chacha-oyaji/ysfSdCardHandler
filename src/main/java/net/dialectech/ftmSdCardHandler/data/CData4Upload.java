@@ -46,7 +46,7 @@ public class CData4Upload extends CDltSimpleFileHandler {
 	private String specifiedColor;
 	@Setter
 	@Getter
-	private int targetImageId;
+	private int targetDataId;
 	@Setter
 	@Getter
 	private String description2Change ;

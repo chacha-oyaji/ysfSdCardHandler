@@ -20,11 +20,11 @@ public class YsfSdCardHandlerApplication {
 		// 最初にデフォルト値を設定
 		CYsfSdCHandlerProperties props = CYsfSdCHandlerProperties.getInstance();
 		try {
-			props.loadAll();
+			props.loadAllProperties();
 		} catch (IOException e) {
 			try {
 				// 存在しなかったってことだから、新たに生成するためのsave。
-				props.saveAll();
+				props.saveAllProperties();
 			} 
 			catch (IOException e2) {
 				System.setProperty("java.awt.headless", "false");
