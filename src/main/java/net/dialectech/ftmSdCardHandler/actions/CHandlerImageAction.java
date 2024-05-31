@@ -1,7 +1,6 @@
 package net.dialectech.ftmSdCardHandler.actions;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -44,18 +43,16 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import org.thymeleaf.util.StringUtils;
 
 import jakarta.servlet.http.HttpSession;
-import lombok.Getter;
-import lombok.Setter;
 import net.dialectech.ftmSdCardHandler.data.CData4Upload;
 import net.dialectech.ftmSdCardHandler.data.CDirStructure;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
+import net.dialectech.ftmSdCardHandler.supporters.CHandlerActionFundamental;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
-import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFileUtilities;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
-import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltImageIO;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltSpringFileStream;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CImageEntry;
+import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CVoiceEntry;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystemCorePart;
 
@@ -69,24 +66,11 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 
 @Controller
 @RequestScope
-@RequestMapping("/execute")
-public class CHandlerAction {
+@RequestMapping("/execute/images")
+public class CHandlerImageAction extends CHandlerActionFundamental {
 
-	@Getter
-	@Setter
-	protected CDltSpringFileStream springFileStream;
-
-	@RequestMapping(value = "base", method = { RequestMethod.POST, RequestMethod.GET })
-	public ModelAndView actDataBase(@ModelAttribute CData4Upload param, HttpSession session, ModelAndView mav) {
-		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
-
-		mav.addObject("prop", prop);
-		mav.setViewName("pages/base");
-		return mav;
-	}
-
-	@RequestMapping(value = "deleteCompletely", method = { RequestMethod.POST, RequestMethod.GET })
-	public ModelAndView actDataDeleteCompletely(@ModelAttribute CData4Upload param, HttpSession session,
+	@RequestMapping(value = "deleteImageCompletely", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataDeleteImageCompletely(@ModelAttribute CData4Upload param, HttpSession session,
 			ModelAndView mav) {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
@@ -138,7 +122,7 @@ public class CHandlerAction {
 						System.out.println("ERROR! on file Delete as File not exists." + data.getFileCoreName());
 					}
 				}
-				fs.removeThis(data);
+				fs.removeThisImage(data);
 				break;
 			}
 		}
@@ -151,8 +135,8 @@ public class CHandlerAction {
 		return mav;
 	}
 
-	@RequestMapping(value = "deleteMarking", method = { RequestMethod.POST, RequestMethod.GET })
-	public ModelAndView actDataDeleteMarking(@ModelAttribute CData4Upload param, HttpSession session,
+	@RequestMapping(value = "deleteImageMarking", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataDeleteImageMarking(@ModelAttribute CData4Upload param, HttpSession session,
 			ModelAndView mav) {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
@@ -171,7 +155,7 @@ public class CHandlerAction {
 			CImageEntry elem = dirList.get(index);
 			if (elem.getDataId() == targetDataId) {
 				elem.setActive(false);
-				elem.storeOwnData2BufferedBytes();
+				elem.storeOwnData2Buffer();
 				break;
 			}
 		}
@@ -219,15 +203,11 @@ public class CHandlerAction {
 			HttpSession session, ModelAndView mav) {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
-		// LinkedList<String> errorMessageList = new LinkedList<String>();
-
-//		if (!fs.isSdCardMounted()) {
-//			return forceStreamAsImage("notLoaded.jpg").prepareDownload();
-//		}
 
 		String fileName;
 		if (params.getBranchDirName() == null || params.getBranchDirName().equals("")) {
-			fileName = prop.getSdCardBaseDirName() + "PHOTO" + File.separator + params.getFileName2Dowload();
+			fileName = prop.getSdCardBaseDirName() + CConst.PhotoFoldername + File.separator
+					+ params.getFileName2Dowload();
 		} else {
 			fileName = prop.getStrBankDirectoryPath() + File.separator + params.getBranchDirName() + File.separator
 					+ params.getFileName2Dowload();
@@ -251,65 +231,28 @@ public class CHandlerAction {
 		}
 	}
 
-	
-	@RequestMapping(value = "mountAndLoadPresentMessages", method = { RequestMethod.POST, RequestMethod.GET })
-	public ModelAndView actDataMountAndLoadPresentMessages(@ModelAttribute CData4Upload params, HttpSession session,
-			ModelAndView mav) {
+	@RequestMapping(value = "testA", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataTestA(@ModelAttribute CData4Upload params, HttpSession session, ModelAndView mav) {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
-		String sdCardBaseDirectory = prop.getSdCardBaseDirName();
-		// String presentUsingBranchName = getPresentUsingBranchName(cardDrive);
 
-		// System.out.println(">>>" + presentUsingBranchName);
+		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
+		File dir = new File(prop.getStrVoiceDirectoryPath());
+		String strTest = "!#$%&(t);+-_";
+		if (!strTest.matches("[a-zA-Z0-9\\_!#$%&\\(\\)\\+\\-;]+")) {
+			System.out.println("所定以外のコードを使用!") ;
+		}
+		String newBase = CYsfCodeConverter.getInstance().ysfByte2Utf8(CYsfCodeConverter.getInstance().utf82YsfByte(strTest)) ;
+//		for (File elem : dir.listFiles()) {
+//			byte[] fName = elem.getName().getBytes();
+//			System.out.println("** " + CYsfCodeConverter.getInstance().ysfByte2Utf8(fName));
+//		}
 		LinkedList<String> errorMessageList = new LinkedList<String>();
-
-		if (!(new File(sdCardBaseDirectory + "QSOLOG/")).exists()) {
-			errorMessageList.add("対応するSD-CARDが装着されていません。");
-			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
-			fs.clearAll();
-			return mav;
-		}
-
-		String errorMsg = null ; // fs.loadFromSDCard();
-		if (errorMsg != null) {
-			errorMessageList.add(errorMsg);
-			errorMessageList.add("SD-CARDの構成が不完全です。");
-			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
-			return mav;
-		}
-
-		// SD-CARD-IDファイルがなかった、新たにIDを生成して、それをSD-CARD-IDファイルに書きこんで、かつFileSystemにも登録する。
-
-		Path sdCardIdFile = Path.of(prop.getStrSdCardIdHolderPath());
-		if (sdCardIdFile.toFile().exists()) {
-			// SD-CARD-IDファイルがあったら、それを読みこんで、FileSystemに登録する。
-			List<String> contents;
-			try {
-				contents = Files.readAllLines(sdCardIdFile, StandardCharsets.UTF_8);
-				String mountedSdCardId = contents.getFirst();
-				fs.setSdCardID(mountedSdCardId);
-			} catch (IOException e) {
-				errorMessageList.add("SD-CARD中のIDファイルの読み出しに失敗しました。＞" + e.getLocalizedMessage());
-			}
-		} else {
-			// SD-CARD-IDファイルがなかった、新たにIDを生成して、それをSD-CARD-IDファイルに書きこんで、かつFileSystemにも登録する。
-			String presentSDCardID = UUID.randomUUID().toString().replaceAll("-", "");
-			String sdCardIdHolder = prop.getStrSdCardIdHolderPath();
-			try (FileOutputStream fo = new FileOutputStream(sdCardIdHolder);) {
-				fo.write(presentSDCardID.getBytes(StandardCharsets.UTF_8));
-				fs.setSdCardID(presentSDCardID);
-			} catch (IOException e) {
-				errorMessageList.add("SD-CARD中にIDファイルがなかったので作成しようとしましたが、その書き出しに失敗しました。＞" + e.getLocalizedMessage());
-			}
-		}
-
-		fs.setActive(true);
-		// 現時点でのSD-CARD上の画像情報はFileSystem:fsにあるから、そのままThymeleafに渡す。
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divMessages");
 		return mav;
 	}
-	
+
 	/**
 	 * リクエスト：Mount/Loadボタンに対応するloadPresentImagesでの処理。
 	 * 
@@ -323,6 +266,8 @@ public class CHandlerAction {
 			ModelAndView mav) {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		fs.setMounted(false);
+
 		String radioId = prop.getRadioId();
 		String sdCardBaseDirectory = prop.getSdCardBaseDirName();
 		// String presentUsingBranchName = getPresentUsingBranchName(cardDrive);
@@ -335,7 +280,7 @@ public class CHandlerAction {
 			fs.clearAll();
 			return mav;
 		}
-		if (!(new File(sdCardBaseDirectory + "QSOLOG/")).exists()) {
+		if (!(new File(sdCardBaseDirectory + CConst.QsoLogFolderName + File.separator)).exists()) {
 			errorMessageList.add("対応するSD-CARDが装着されていません。");
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			fs.clearAll();
@@ -375,7 +320,7 @@ public class CHandlerAction {
 			}
 		}
 
-		fs.setActive(true);
+		fs.setMounted(true);
 		// 現時点でのSD-CARD上の画像情報はFileSystem:fsにあるから、そのままThymeleafに渡す。
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
 				"pages/divImages");
@@ -540,7 +485,7 @@ public class CHandlerAction {
 		for (int index = 0; index < dirList.size(); ++index) {
 			if (dirList.get(index).getDataId() == targetDataId) {
 				dirList.get(index).setActive(true);
-				dirList.get(index).storeOwnData2BufferedBytes();
+				dirList.get(index).storeOwnData2Buffer();
 				break;
 			}
 		}
@@ -602,37 +547,6 @@ public class CHandlerAction {
 	public ModelAndView actDataError(@ModelAttribute CData4Upload param, HttpSession session, ModelAndView mav) {
 		mav.addObject("errorMessage", "何らかのエラーが生じました。");
 		mav.setViewName("pages/divErrorOnly");
-		return mav;
-	}
-
-	@RequestMapping(value = "settleOfProperty", method = { RequestMethod.POST, RequestMethod.GET })
-	public ModelAndView actDataSettleOfProperty(@ModelAttribute CData4Upload param, HttpSession session,
-			ModelAndView mav) {
-		CYsfFileSystem fs = CYsfFileSystem.getInstance();
-		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
-		LinkedList<String> errorMessageList = new LinkedList<String>();
-
-		prop.setSdCardDrive(param.getSdCardDrive());
-		prop.setRadioId(param.getRadioId());
-		prop.setMyCallSign(param.getMyCallSign());
-		prop.setImageMagickPath(param.getImageMagickPath());
-		prop.setBrowserPath(param.getBrowserPath());
-		prop.setTopLetterOfPhotoFile(param.getTopLetterOfPhotoFile());
-		prop.setStrFillByteInPctDir(param.getStrFillByteInPctDir());
-		prop.setListStepSize(param.getListStepSize());
-		prop.setMaxSizeOfImage(String.valueOf(param.getImageSize()));
-
-		;
-		if (param.getOffset4Debug() != null && !param.getOffset4Debug().equals("")) {
-			prop.setStrOffset4Debug(param.getOffset4Debug());
-		}
-		try {
-			prop.saveAllProperties();
-		} catch (IOException e) {
-			errorMessageList.add("プロパティファイルを書き込めませんでした。");
-		}
-
-		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divResOfSettlement");
 		return mav;
 	}
 
@@ -855,7 +769,7 @@ public class CHandlerAction {
 			return mav;
 		}
 
-		if (!fs.isActive()) {
+		if (!fs.isMounted()) {
 			errorMessageList.add("先にMOUNT/LOAD機能を使って、SDカードの設定を確認してください。");
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
@@ -881,8 +795,8 @@ public class CHandlerAction {
 			}
 
 			Hashtable<EncodeHintType, Object> hints = new Hashtable<EncodeHintType, Object>();
-			
-			ErrorCorrectionLevel ecLevel = ErrorCorrectionLevel.valueOf(params.getErrorCorrectionLevel()) ;
+
+			ErrorCorrectionLevel ecLevel = ErrorCorrectionLevel.valueOf(params.getErrorCorrectionLevel());
 			hints.put(EncodeHintType.ERROR_CORRECTION, ecLevel);
 			hints.put(EncodeHintType.CHARACTER_SET, "utf-8");
 
@@ -891,18 +805,19 @@ public class CHandlerAction {
 			BitMatrix bitMatrix = writer.encode(source, format, width, height, hints);
 			BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
 			ImageIO.write(image, "jpg", inFiles[0]);
-			
+
 			// YAESU SYSTEM FUSIONでの特殊カタカナに特化して対応文字の存否チェック
-			// 一旦、UTF8 -> YSF特殊文字 -> UTF8　と変換をして、元に戻るかどうかで検証する。
-			CYsfCodeConverter converter = CYsfCodeConverter.getInstance() ;
-			String finalDescription = converter.ysfByte2Utf8(converter.utf82YsfByte(params.getDescription2Change().trim()));
-			if (finalDescription!=null && !finalDescription.equals(params.getDescription2Change()) ) {
+			// 一旦、UTF8 -> YSF特殊文字 -> UTF8 と変換をして、元に戻るかどうかで検証する。
+			CYsfCodeConverter converter = CYsfCodeConverter.getInstance();
+			String finalDescription = converter
+					.ysfByte2Utf8(converter.utf82YsfByte(params.getDescription2Change().trim()));
+			if (finalDescription != null && !finalDescription.equals(params.getDescription2Change())) {
 				errorMessageList.add("「記述」に使えない文字がありましたので、「$」に置き換えてあります。");
 				params.setDescription2Change(finalDescription);
 			}
 			// Description 中間にあるSPACE文字は、なぜかFTM-300の暴走を引き起こすので、アンダースコアに置換しておく。
 			params.setDescription2Change(finalDescription.replaceAll(" ", "_"));
-			
+
 			boolean qrCodeDetected = convertTempFilesAndStore2Target(inFiles, params, "", 8, "#000");
 			if (!qrCodeDetected) {
 				errorMessageList.add("指定した文字列では解析可能なQRコードとして十分なものになっていません。");
@@ -1057,7 +972,7 @@ public class CHandlerAction {
 				}
 				ie.setDestination(hisCall);
 				ie.setRealFileExists(true);
-				ie.storeOwnData2BufferedBytes();
+				ie.storeOwnData2Buffer();
 				String decodedQRCode = fs.analyzeQRCode(newPath.toFile().toString());
 				ie.setQrString(decodedQRCode);
 				System.out.println("Registered as " + newPath.toFile().toString());
@@ -1106,25 +1021,24 @@ public class CHandlerAction {
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
 		}
-		
-		if (params.getDescription2Change()==null || params.getDescription2Change().equals("")) {
+
+		if (params.getDescription2Change() == null || params.getDescription2Change().equals("")) {
 			errorMessageList.add("変更する記述が記載されていません。");
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
 		}
 		// YAESU SYSTEM FUSIONでの特殊カタカナに特化して対応文字の存否チェック
-		// 一旦、UTF8 -> YSF特殊文字 -> UTF8　と変換をして、元に戻るかどうかで検証する。
-		CYsfCodeConverter converter = CYsfCodeConverter.getInstance() ;
+		// 一旦、UTF8 -> YSF特殊文字 -> UTF8 と変換をして、元に戻るかどうかで検証する。
+		CYsfCodeConverter converter = CYsfCodeConverter.getInstance();
 		String finalDescription = converter.ysfByte2Utf8(converter.utf82YsfByte(params.getDescription2Change().trim()));
-		if (finalDescription!=null && !finalDescription.equals(params.getDescription2Change()) ) {
+		if (finalDescription != null && !finalDescription.equals(params.getDescription2Change())) {
 			errorMessageList.add("「記述」に使えない文字がありましたので、「$」に置き換えてあります。");
 			params.setDescription2Change(finalDescription);
 		}
 		// Description 中間にあるSPACE文字は、なぜかFTM-300の暴走を引き起こすので、アンダースコアに置換しておく。
 		params.setDescription2Change(finalDescription.replaceAll(" ", "_"));
-		
-		
-		fs.changeDescription(params.getTargetDataId(),params.getDescription2Change());
+
+		fs.changeDescription(params.getTargetDataId(), params.getDescription2Change());
 		fs.saveAllOfFilesOnPict(errorMessageList);
 		fs.reNumberAndPrepareForPictureDisplay();
 		setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
@@ -1182,7 +1096,7 @@ public class CHandlerAction {
 		 * != null; } catch (Exception e) {
 		 * errorMessageList.add("一時ディレクトリを生成できませんでした。"); return mav; }
 		 */
-		if (!fs.isActive()) {
+		if (!fs.isMounted()) {
 			errorMessageList.add("先にMOUNT/LOAD機能を使って、SDカードの設定を確認してください。");
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
 			return mav;
@@ -1312,22 +1226,6 @@ public class CHandlerAction {
 		return newBranchDirName;
 	}
 
-	protected CDltSpringFileStream forceStreamAsImage(String imageName) {
-		CDltSpringFileStream springFileStream;
-		try {
-			CDltImageIO imageHandler = CDltImageIO.getInstance();
-			ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			String imageExtention = CDltFileUtilities.extentionOfPath(imageName);
-			bos = imageHandler.readFromInputStream2ByteArrayOutputStreamOf(
-					this.getClass().getResourceAsStream("/net/dialectech/commons/dltFlows/images/" + imageName),
-					imageExtention);
-			springFileStream = new CDltSpringFileStream(bos, "readError." + imageExtention, "image/jpeg");
-		} catch (CDltFlowsException e1) {
-			springFileStream = null;
-		}
-		return springFileStream;
-	}
-
 	private String getPresentUsingBranchName() {
 		String presentUsingBranchName = getPresentUsingBranchNameWithNullIfNotExists();
 
@@ -1368,26 +1266,7 @@ public class CHandlerAction {
 		}
 	}
 
-	/**
-	 * ModelAndViewであるmavに幾つかの設定値を載せて、リクエストのレスポンスメソッドから抜け出る準備をする。
-	 * 
-	 * @param mav
-	 * @param errorMessageList
-	 * @param branchName
-	 * @param fs
-	 * @param pageTitle
-	 * @param prop
-	 * @param viewName
-	 */
-	void setAllParameters4Mav(ModelAndView mav, LinkedList<String> errorMessageList, String branchName,
-			CYsfFileSystemCorePart fs, String pageTitle, CYsfSdCHandlerProperties prop, String viewName) {
-		mav.addObject("errorMessageList", errorMessageList);
-		mav.addObject("branchDirName", branchName);
-		mav.addObject("fs", fs);
-		mav.addObject("title", pageTitle);
-		mav.addObject("prop", prop);
-		mav.setViewName(viewName);
-	}
+
 
 	/**
 	 * QSOLOG内、branchNameHolderファイル中に、移動させるディレクトリの名称を記録する。branchNameHolderファイルには、現在表「画像処理」面に

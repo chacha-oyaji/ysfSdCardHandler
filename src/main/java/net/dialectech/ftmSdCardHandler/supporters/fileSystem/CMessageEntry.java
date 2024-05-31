@@ -45,6 +45,7 @@ public class CMessageEntry extends CDataEntry {
 		else
 			this.description = message;
 		generatedUniqString = UUID.randomUUID().toString().replaceAll("\\-", "");
+		realFileExists = true ;	// Messageはオンメモリで展開するので、常に実データはあるものとする。
 	}
 
 	/**
@@ -85,6 +86,7 @@ public class CMessageEntry extends CDataEntry {
 		byte[] gpsPosition = subBytes(dirEntrySource, 0x64, 0x77);
 		this.gpsPosition = new String(gpsPosition);
 		generatedUniqString = UUID.randomUUID().toString().replaceAll("\\-", "");
+		realFileExists = true ;	// Messageはオンメモリで展開するので、常に実データはあるものとする。
 	}
 
 	private int copyBytes2LimitedBytes(byte[] source, byte[] destination) {
@@ -112,7 +114,7 @@ public class CMessageEntry extends CDataEntry {
 	}
 
 	@Override
-	public void storeOwnData2BufferedBytes() {
+	public void storeOwnData2Buffer() {
 		dataEntry[0] = sym;
 		byte[] binData = nodeId.getBytes(StandardCharsets.UTF_8);
 		binData = fillWithByteOf(binData, (byte) 0x20, 5);

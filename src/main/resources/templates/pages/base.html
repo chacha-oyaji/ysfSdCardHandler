@@ -85,6 +85,11 @@ td.nrmBase {
 		$('#tabMain').tabs({
 			active : 0
 		});
+
+		$("#tabMessage").tabs({
+			active : 0
+		});
+		
 		$("#dlgQRCodeInputDialog").dialog({
 			autoOpen : false,
 			minWidth : 800,
@@ -108,6 +113,15 @@ td.nrmBase {
 			$(".cDivHideImage").hide();
 		} else {
 			$(".cDivHideImage").show();
+		}
+	}
+
+	function hideOrShowPseudoDeletedOnVoice() {
+		var hideMode = $("#cbToggleHidePseudoDeletedOnVoice").prop("checked");
+		if (hideMode == false) {
+			$(".cDivHideVoice").hide();
+		} else {
+			$(".cDivHideVoice").show();
 		}
 	}
 
@@ -204,14 +218,14 @@ td.nrmBase {
 		$("#imgOnDetailDescription").attr('src', imgUrl)
 		// 各種指示・設定用のリクエストform にこのimageIdを設定
 		$("#txtImageIdOfDelete").val(data.dataId);
-		$("#txtImageIdOfDeleteCompletely").val(data.dataId);
+		$("#txtImageIdOfDeleteImageCompletely").val(data.dataId);
 		$("#txtImageIdOfRecover").val(data.dataId);
 		$("#txtImageIdOfChangeDescription").val(data.dataId);
 	}
 
-	function confirmCompleteDeleteAndExec() {
+	function confirmCompleteDeleteImageAndExec() {
 		if (window
-				.confirm('*************\n本処理は復活できません。\n*************\nまた、リグの電源再立ち上げが必要になります。\n\n本画像を削除してよろしいですか？')) {
+				.confirm('*************\n本処理は復活できません。\n*************\n\n本画像を削除してよろしいですか？')) {
 			// OKの場面
 			$("#dlgDetailDialog").dialog("close");
 			submitAndStore2Target('frmCompleteDeleteAndExec', 'divImageGallery');
@@ -219,26 +233,26 @@ td.nrmBase {
 		return;
 	}
 
-	function deleteMarking() {
+	function deleteImageMarking() {
 		$("#dlgDetailDialog").dialog("close");
-		submitAndStore2Target('frmDeleteMarking', 'divImageGallery');
+		submitAndStore2Target('frmDeleteImageMarking', 'divImageGallery');
 	}
 
-	function recoverMarking() {
+	function recoverImageMarking() {
 		$("#dlgDetailDialog").dialog("close");
 		submitAndStore2Target('frmRecoverMarking', 'divImageGallery');
 	}
 
-	function confirmAndCompleteClear() {
+	function confirmAndCompleteClearImage() {
 		submitAndStore2Target("frmMove2MemoryAndCompleteClearAllImages",
 				"divImageGallery");
 	}
 
-	function submitShowRecoveryDirContents(targetDirName) {
+	function submitShowBankContents(targetDirName) {
 		$(".cBranchDirName").val(targetDirName);
 		submitAndStore2Target("frmshowBankDirContents", "divImageListOfBank");
 		$("#divImageListOfBank").show();
-		$("#divRenameOperator").hide();
+		$("#divRenameBankOperator").hide();
 	}
 
 	function submitRecallDirContents(targetDirName) {
@@ -249,7 +263,7 @@ td.nrmBase {
 
 	function showReNameplain(targetDirName) {
 		$("#divImageListOfBank").hide();
-		$("#divRenameOperator").show();
+		$("#divRenameBankOperator").show();
 		$(".cRenameBranchDirName").val(targetDirName);
 	}
 
@@ -315,10 +329,18 @@ td.nrmBase {
 		$('#dlgQRCodeInputDialog').dialog('close');
 	}
 	
+	/*
+		MOUNTの処理は、画像、MESSAGE、VOICEそれぞれをキックする。これは、一回のMOUNT操作によっても表示すべき
+		事項（画像リスト、MESSAGE-LIST、VOICE-LIST）を表示するところが別々なので、これらの取得のためのリクエスト
+		を個々に送る必要があるからである。なお、MESSAGE、VOICEのMOUNTリクエストにおいては、予めMOUNTされている
+		ことを前提としており、ＭＯＵＮＴされていなければ１０秒待ち、それでもＭＯＵＮＴされないときに、はじめてＭＯＵＮＴする
+		ようになっている。
+	*/
 	function processMount(){
 		$('#dlgDetailDialog').dialog('close');
 		submitAndStore2Target('frmLoadSDCard4Pict','divImageGallery');
 		submitAndStore2Target('frmLoadSDCard4Msg','divMessageGallery');
+		submitAndStore2Target('frmLoadSDCard4Voice','dvVoiceList');
 	}
 </script>
 </head>
@@ -326,7 +348,7 @@ td.nrmBase {
 
 	<div id="dlgQRCodeInputDialog" title="QRコード入力" style="display: none;">
 		<form id="frmQRCodeUpload" method="post"
-			th:action="@{/execute/createQRCodeAndLoadPresentImages}"
+			th:action="@{/execute/images/createQRCodeAndLoadPresentImages}"
 			enctype="multipart/form-data">
 			<h2>QRコードに変換する文字列</h2>
 			<textarea id="taQRInfo" name="strQRCode"
@@ -418,7 +440,7 @@ td.nrmBase {
 									onchange="hideOrShowPseudoDeleted();">疑似消去表示</label>
 							</div>
 							<form id="frmLoadSDCard4Pict" method="post"
-								th:action="@{/execute/mountAndLoadPresentImages}"
+								th:action="@{/execute/images/mountAndLoadPresentImages}"
 								enctype="multipart/form-data">
 								<input type="hidden" id="txtDriveName1" class="cTxtDriveName"
 									name="sdCardDrive"> <input type="hidden"
@@ -428,12 +450,8 @@ td.nrmBase {
 								<input type="hidden" id="txtMyCallSign1" class="cTxtMyCallSign"
 									name="myCallSign">
 							</form>
-							<form id="frmLoadSDCard4Msg" method="post"
-								th:action="@{/execute/mountAndLoadPresentMessages}"
-								enctype="multipart/form-data">
-							</form>
 							<form id="frmUploadNewImages" method="post"
-								th:action="@{/execute/uploadNewImages}"
+								th:action="@{/execute/images/uploadNewImages}"
 								enctype="multipart/form-data">
 								<input type="hidden" id="txtDriveName2" class="cTxtDriveName"
 									name="sdCardDrive"> <input type="hidden"
@@ -485,9 +503,9 @@ td.nrmBase {
 							<button style="margin-left: 5px;"
 								onclick="submitAndStore2Target('frmUploadNewImages','divImageGallery');">UPLOAD</button>
 							<form id="frmMove2MemoryAndCompleteClearAllImages" method="post"
-								th:action="@{/execute/move2MemoryAndCompleteClearAllImages}"
+								th:action="@{/execute/images/move2MemoryAndCompleteClearAllImages}"
 								enctype="multipart/form-data">
-								<button type="button" onclick="confirmAndCompleteClear() ;"
+								<button type="button" onclick="confirmAndCompleteClearImage() ;"
 									style="margin-left: 5px;">Move to BANK</button>
 							</form>
 							<div style="float: left; text-align: center;"></div>
@@ -499,10 +517,13 @@ td.nrmBase {
 						<div id="divImageGallery" style=""></div>
 					</div>
 					<div id="tab2">
+						<!--/* ************************************************************************** */-->
+						<!--/*                                   BANK                                     */-->
+						<!--/* ************************************************************************** */-->
 						ここでは、バンク記録によってバックアップしたデータを現用データに戻します。操作前に現用データがあればバンクに記録します。
 						<div>
 							<form id="frmShowBankList" method="post"
-								th:action="@{/execute/showBankList}"
+								th:action="@{/execute/images/showBankList}"
 								enctype="multipart/form-data">
 								<button type="button" id="btnShowDirectory4Bank"
 									onclick="$('#txtBankListFrom').val(1);submitAndStore2Target('frmShowBankList','divDirectoryList4Bank');">リスト再取得</button>
@@ -519,22 +540,107 @@ td.nrmBase {
 						<div id="divDirectoryList4Bank"></div>
 					</div>
 					<div id="tab3">
-						<div style="">
-							<div>
-								<button type="button" onclick="processMount();">MOUNT</button>
-								<textarea id="txtMessage2Send"></textarea><button type="button" onclick="processMount();">記録</button>
+						<!--/* ************************************************************************** */-->
+						<!--/*                                 MESSAGE MESSAGE                            */-->
+						<!--/* ************************************************************************** */-->
+						<!--/* ================
+							  最初に隠しformの定義 
+							================ */-->
+						<form id="frmLoadSDCard4Msg" method="post"
+							th:action="@{/execute/messages/mountAndLoadPresentMessages}"
+							enctype="multipart/form-data"></form>
+						<div style="clear: both;" id="tabMessage">
+							<ul>
+								<li><a href="#tabMessage1">既受信MESSAGE処理</a></li>
+								<li><a href="#tabMessage2">新規MESSAGE書込処理</a></li>
+							</ul>
+							<div id="tabMessage1">
+								<button type="button"
+									style="float: left; height: 2em; vertical-align: middle;"
+									onclick="processMount();">MOUNT</button>
+								<div style="float: left; vertical-align: middle;">
+									<form id="frmShowMessageList" method="post"
+										th:action="@{/execute/messages/showMessageList}"
+										enctype="multipart/form-data">
+										<input type="hidden" id="txtMessageListFrom" name="startFrom">
+										<button type="button" id="btnShowMessageList"
+											style="height: 2em;"
+											onclick="$('#txtMessageListFrom').val(1);submitAndStore2Target('frmShowMessageList','divMessageGallery');">リスト再取得</button>
+										<select name="sortingOrder" style="height: 2em;"
+											onchange="$('#btnShowMessageList').click();">
+											<option value="timeOrder" selected>時間順（new -> old）</option>
+											<option value="timeReverseOrder">時間逆順（old -> new）</option>
+											<option value="nameOrder">名称順</option>
+											<option value="nameReverseOrder">名称逆順</option>
+										</select>
+									</form>
+								</div>
+								<br style="clear: both;" />
+								<hr>
+								<div id="divMessageGallery"></div>
+							</div>
+							<div id="tabMessage2">
+								<div style="">
+									<div>
+										<textarea id="txtMessage2Send"></textarea>
+										<button type="button" onclick="">記録</button>
+										<button type="button"
+											onclick="submitAndStore2Target('frmTest','divMessageGallery');">test</button>
+										<form id="frmTest" method="post" enctype="multipart/form-data"
+											action="testA"></form>
+									</div>
+								</div>
+								<br style="clear: both;" />
 							</div>
 						</div>
-						<hr>
-						<div id="divMessageGallery"></div>
+
 					</div>
 					<div id="tab4">
-						<div style="">
-							<button type="button" onclick="">MOUNT</button>
-							<audio id="audioPlayer" controls></audio>
-							<div id="dvWaveList"></div>
+						<!--/* ************************************************************************** */-->
+						<!--/*                             VOICE VOICE VOICE                              */-->
+						<!--/* ************************************************************************** */-->
+						<!--/* ================
+						  隠しformの定義 
+						================ */-->
+						<form id="frmLoadSDCard4Voice" method="post"
+							th:action="@{/execute/voices/mountAndLoadPresentVoices}"
+							enctype="multipart/form-data">
+							<input type="hidden" id="txtVoiceListOrderOnMount"
+								name="sortingOrder"> <input type="hidden"
+								name="startFrom" value="1">
+						</form>
+						<div>
+							<button type="button"
+								onclick="$('#txtVoiceListOrderOnMount').val($('#slVoiceSortingOrder').prop('value'));processMount();"
+								style="float: left; vertical-align: middle;padding:5px;">MOUNT</button>
+							<div
+								style="float: left; background-color: #44c; color: white; margin-left: 10px;margin-right: 10px;padding:5px;">
+								<label style="cursor: pointer;"><input type="checkbox"
+									id="cbToggleHidePseudoDeletedOnVoice"
+									onchange="hideOrShowPseudoDeletedOnVoice();">疑似消去表示</label>
+							</div>
+							<div style="float: left; vertical-align: middle;">
+								<form id="frmShowVoiceList" method="post"
+									th:action="@{/execute/voices/showVoiceList}"
+									enctype="multipart/form-data">
+									<input type="hidden" id="txtVoiceListFrom" name="startFrom">
+									<button type="button" id="btnShowVoiceList"
+										style="height: 2em;"
+										onclick="$('#txtVoiceListFrom').val(1);submitAndStore2Target('frmShowVoiceList','dvVoiceList');">リスト再取得</button>
+									<select name="sortingOrder" style="height: 2em;"
+										id="slVoiceSortingOrder"
+										onchange="$('#btnShowVoiceList').click();">
+										<option value="timeOrder" selected>時間順（new -> old）</option>
+										<option value="timeReverseOrder">時間逆順（old -> new）</option>
+										<option value="nameOrder">名称順</option>
+										<option value="nameReverseOrder">名称逆順</option>
+									</select>
+								</form>
+							</div>
+							<audio id="plyAudioPlayer" controls></audio>
 						</div>
-
+						<hr>
+						<div id="dvVoiceList"></div>
 					</div>
 
 					<div id="tab5">

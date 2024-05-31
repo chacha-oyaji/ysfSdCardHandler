@@ -6,14 +6,14 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.2.3</version>
+		<version>3.3.0</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>net.dialectech</groupId>
 	<artifactId>ftmSdCardHandler</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>ftmSdCardHandler</name>
-	<description>Yaesu FTM SD-Card Handler on Spring Boot3</description>
+	<name>ysfSdCardHandler</name>
+	<description>Yaesu System Fusion SD-Card Handler on Spring Boot3</description>
 	<properties>
 		<java.version>21</java.version>
 		<webjarsJQuery.version>3.7.1</webjarsJQuery.version>

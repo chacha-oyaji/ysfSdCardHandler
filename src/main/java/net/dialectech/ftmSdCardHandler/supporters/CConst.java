@@ -18,6 +18,10 @@ public class CConst {
 	public static final String STR_QSOMSG = "QSOMSG.dat";
 	public static final String STR_QSOMNG = "QSOMNG.dat";
 
+	public static final String STR_WAVMNG = "WAVMNG.dat";
+	public static final String STR_QSOWAVFAT = "QSOWAVFAT.dat";
+	public static final String STR_QSOWAVDIR = "QSOWAVDIR.dat";
+
 	public static final String STR_DISP_Program_Name = "Yaesu System FusionⓇ SdCard Handler programmed by JI1BXM";
 
 	public static final String STR_WORKING_DIRECTORY_PATH = System.getProperty("user.home") + File.separator + "AppData"
@@ -37,7 +41,10 @@ public class CConst {
 	public static final String defaultTopLetterOfPhotoFile = "M";
 	public static final String defaultRadioId = "XXXXX";
 	public static final String defaultFillByteInPctDir = "20"; // HEXADECIMALで指定する。
-
+	public static final String PhotoFoldername = "PHOTO";
+	public static final String QsoLogFolderName = "QSOLOG";
+	public static final String VoiceFoldername = "VOICE";
+	
 	public static LinkedHashMap<String, String> defaultPositionOfSuperImposeMap = new LinkedHashMap<String, String>();
 	public static LinkedHashMap<String, String> defaultColorSelectionMap = new LinkedHashMap<String, String>();
 	public static LinkedHashMap<String, String> defaultMaxSizeOfImage = new LinkedHashMap<String, String>();

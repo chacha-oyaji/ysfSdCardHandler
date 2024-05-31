@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script th:inline="javascript">
+	$().ready(function() {
+		hideOrShowPseudoDeletedOnVoice();
+	});
+
+	function playVoice(url) {
+		$("#plyAudioPlayer")[0].src = url;
+		$("#plyAudioPlayer")[0].play();
+	}
+
+	function changeVoiceFileName(id, formerFileName, presentPos) {
+		$("#txtPresentVoiceDataId").val(id);
+		$("#txtFormerVoiceFileName").val(formerFileName);
+		$("#txtNewVoiceFileName").val(formerFileName);
+		$("#txtPresentVoiceStartId").val(presentPos);
+		$("#divVoiceRenameOperator").show();
+	}
+
+	function submitRenameVoiceFile() {
+		var newFileName = $("#txtNewVoiceFileName").val();
+		var formerFileName = $("#txtFormerVoiceFileName").val();
+		if (newFileName == formerFileName) {
+			alert("ファイル名称が変更されていません。");
+			return;
+		}
+		if (newFileName.length > 12) {
+			alert("文字列が長すぎます。\n文字数は１２までです。");
+			return;
+		}
+		if (newFileName=="" || newFileName.match("^[ ]+$")) {
+			alert("音声ファイル名は空白文字列は使えません。");
+			return;
+		}
+		if (!newFileName.match("^[ a-zA-Z0-9\\_!#$%&\\(\\)\\+\\-;]+$")) {
+			alert("音声ファイルの場合、使用できる文字は、\n    半角英数、#、$、%、&、(、)、+、-、;\nのみです。");
+			return;
+		}
+		submitAndStore2Target("frmVoiceRename", "dvVoiceList");
+	}
+
+	function deleteVoiceMarking(dataId, presentPos) {
+		$(".cVoiceDataId").val(dataId);
+		$(".cVoicePresentVoiceListPos").val(presentPos);
+		$(".cVoiceSortingOrder").val($('#slVoiceSortingOrder').prop('value'));
+		submitAndStore2Target("frmDeleteVoiceMarking", "dvVoiceList");
+	}
+
+	function deleteVoiceCompletely(dataId, presentPos) {
+		if (window.confirm("＊＊＊＊＊＊＊＊＊＊＊\n本処理は復活できません。" + "\n＊＊＊＊＊＊＊＊＊＊＊"
+				+ "\n\n本音声情報を削除してよろしいですか？")) {
+			// OKの場面
+			$(".cVoiceDataId").val(dataId);
+			$(".cVoicePresentVoiceListPos").val(presentPos);
+			$(".cVoiceSortingOrder").val(
+					$('#slVoiceSortingOrder').prop('value'));
+			submitAndStore2Target('frmDeleteVoiceCompletely', 'dvVoiceList');
+		}
+		return;
+	}
+
+	function recoverVoiceMarking(dataId, presentPos) {
+		$(".cVoiceDataId").val(dataId);
+		$(".cVoicePresentVoiceListPos").val(presentPos);
+		$(".cVoiceSortingOrder").val($('#slVoiceSortingOrder').prop('value'));
+		submitAndStore2Target("frmRecoverVoiceMarking", "dvVoiceList");
+	}
+</script>
+</head>
+<body>
+	<!--/* 
+	************************************************************************************************
+	form を一括しておいておく
+	（１）　deleteVoiceMarking
+	（２）　recoverVoiceMarkin
+	（３）　deleteVoiceCompletely
+	************************************************************************************************
+ */-->
+	<form id="frmDeleteVoiceMarking" method="post"
+		th:action="@{/execute/voices/deleteVoiceMarking}"
+		enctype="multipart/form-data">
+		<input type="hidden" class="cVoiceDataId" name="targetDataId">
+		<input type="hidden" class="cVoiceSortingOrder" name="sortingOrder">
+		<input type="hidden" class="cVoicePresentVoiceListPos"
+			name="startFrom">
+	</form>
+	<form id="frmRecoverVoiceMarking" method="post"
+		th:action="@{/execute/voices/recoverVoiceMarking}"
+		enctype="multipart/form-data">
+		<input type="hidden" class="cVoiceDataId" name="targetDataId">
+		<input type="hidden" class="cVoiceSortingOrder" name="sortingOrder">
+		<input type="hidden" class="cVoicePresentVoiceListPos"
+			name="startFrom">
+	</form>
+	<form id="frmDeleteVoiceCompletely" method="post"
+		th:action="@{/execute/voices/deleteVoiceCompletely}"
+		enctype="multipart/form-data">
+		<input type="hidden" class="cVoiceDataId" name="targetDataId">
+		<input type="hidden" class="cVoiceSortingOrder" name="sortingOrder">
+		<input type="hidden" class="cVoicePresentVoiceListPos"
+			name="startFrom">
+	</form>
+	<th:block th:each="errorMsg,status : ${errorMessageList}">
+		<div th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></div>
+	</th:block>
+	<div th:each="startP : ${targetPosList}" th:text="${startP}"
+		th:style="|font-size:1.5em;float: left; margin: 5px;border:solid 1px #444;border-radius: 5px;cursor:pointer;${startP==presentPos?'background-color:#fcc;color:red':''}|"
+		th:onclick="$('#txtVoiceListFrom').val([[${startP}]]);submitAndStore2Target('frmShowVoiceList','dvVoiceList');"></div>
+	<br style="clear: both;">
+	<div style="width: 100%;"
+		th:if="${fs !=null && fs.voiceDirListWithDisplayOrder !=null}">
+		<div style="float: left;">
+			<table>
+				<tr>
+					<th></th>
+					<th>記録年月日</th>
+					<th>容量</th>
+					<th>ファイル名</th>
+					<th>操作</th>
+				</tr>
+				<th:block th:each="entity : ${voiceList}">
+					<tr th:if="${entity.realFileExists}"
+						th:class="${entity.active?'cDivShowVoice':'cDivHideVoice'}">
+						<th th:text="${entity.dataId}"></th>
+						<td
+							th:text="${#dates.format(entity.date2Send,'yyyy/MM/dd HH:mm:ss')}"
+							style="text-align: left;"></td>
+						<td th:text="|${entity.fileSize} bytes|"></td>
+						<td th:text="${entity.fileNameCore}"
+							th:style="|background-color:${entity.active?'#ff8':'#888'};text-align:left;|"></td>
+						<td>
+							<button type="button"
+								th:onclick="playVoice([[@{/execute/voices/downloadVoice(targetDataId=${entity.dataId})}]]);">再生</button>
+							<button type="button"
+								th:onclick="changeVoiceFileName([[${entity.dataId}]],[[${entity.fileNameCore}]],[[${presentPos}]]);">名称変更</button>
+							<button th:if="${entity.active}" type="button"
+								style="background-color: pink;"
+								th:onclick="deleteVoiceMarking([[${entity.dataId}]],[[${presentPos}]]);">削除扱い</button>
+							<button th:unless="${entity.active}" type="button"
+								style="background-color: #8f8;"
+								th:onclick="recoverVoiceMarking([[${entity.dataId}]],[[${presentPos}]]);">復活扱い</button>
+							<button type="button"
+								style="background-color: #f66;"
+								th:onclick="deleteVoiceCompletely([[${entity.dataId}]],[[${presentPos}]]);">完全削除</button>
+						</td>
+					</tr>
+				</th:block>
+			</table>
+		</div>
+		<div id="divVoiceRenameOperator" style="float: left; display: none;">
+			<form id="frmVoiceRename"
+				th:action="@{/execute/voices/renameVoiceFile}" method="post"
+				enctype="multipart/form-data">
+				<input type="hidden" class="cVoiceSortingOrder" name="sortingOrder">
+				<table>
+					<tr>
+						<th>変更する音声情報の名称</th>
+						<td><input type="hidden" class="" id="txtPresentVoiceDataId"
+							name="targetDataId"> <input type="hidden" class=""
+							id="txtPresentVoiceStartId" name="startFrom"> <input
+							type="text" class="" id="txtFormerVoiceFileName"
+							disabled="disabled"></td>
+					</tr>
+					<tr>
+						<th>変更後の名称</th>
+						<td><input type="text" id="txtNewVoiceFileName" class=""
+							name="description2Change" placeholder="例：CQ_1"></td>
+					</tr>
+					<tr>
+						<th>操作</th>
+						<td><button type="button"
+								onclick="$('.cVoiceSortingOrder').val($('#slVoiceSortingOrder').prop('value'));submitRenameVoiceFile();">名称変更実行</button></td>
+					</tr>
+				</table>
+			</form>
+		</div>
+		<div style="clear: both;"></div>
+	</div>
+</body>
+</html>

@@ -164,7 +164,7 @@ public class CImageEntry extends CDataEntry {
 		dataEntry[0x53] = (byte) (pictureSize & 0xff);
 	}
 
-	public void storeOwnData2BufferedBytes() {
+	public void storeOwnData2Buffer() {
 		dataEntry[0] = sym;
 		byte[] binData = nodeId.getBytes(StandardCharsets.UTF_8);
 		binData = fillWithByteOf(binData, (byte) 0x20, 5);

@@ -12,16 +12,27 @@
 	<th:block th:each="errorMsg,status : ${errorMessageList}">
 		<div th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></div>
 	</th:block>
+	<div th:each="startP : ${targetPosList}" th:text="${startP}"
+		th:style="|font-size:1.5em;float: left; margin: 5px;border:solid 1px #444;border-radius: 5px;cursor:pointer;${startP==presentPos?'background-color:#fcc;color:red':''}|"
+		th:onclick="$('#txtMessageListFrom').val([[${startP}]]);submitAndStore2Target('frmShowMessageList','divDirectoryList4Bank');"></div>
+	<br style="clear: both;">
 	<div style="width: 100%;">
 		<th:block th:if="${fs !=null && fs.msgDirListWithDisplayOrder !=null}">
-		<table>
-			<tr th:each="entity : ${fs.msgDirListWithDisplayOrder}">
-				<th>MSG</th><td th:text="${entity.date2Send}" style="text-align:left;"></td><td th:text="${entity.message}" style="text-align:left;"></td>
-			</tr>
+			<table>
 
-		</table>
+				<tr th:each="entity : ${fs.msgDirListWithDisplayOrder}">
+					<th th:text="${entity.dataId}"></th>
+					<td th:text="${#dates.format(entity.date2Send,'yyyy/MM/dd HH:mm')}"
+						style="text-align: left;"></td>
+					<td th:text="${entity.message}"
+						th:style="|background-color:${entity.active?'#ff8':'#888'};text-align:left;|"></td>
+
+				</tr>
+
+			</table>
 		</th:block>
 		<div style="clear: both;"></div>
+
 	</div>
 </body>
 </html>

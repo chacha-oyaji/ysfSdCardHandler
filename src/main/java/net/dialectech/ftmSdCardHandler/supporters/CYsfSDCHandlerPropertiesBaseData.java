@@ -137,9 +137,21 @@ public class CYsfSDCHandlerPropertiesBaseData extends Properties {
 	public String getStrPhotoDirectoryPath() {
 		String res;
 		if (debugMode) {
-			res = getSdCardDrive() + ":" + File.separator + getStrOffset4Debug() + "PHOTO" + File.separator;
+			res = getSdCardDrive() + ":" + File.separator + getStrOffset4Debug() + CConst.PhotoFoldername
+					+ File.separator;
 		} else {
-			res = getSdCardDrive() + ":" + File.separator + "PHOTO" + File.separator;
+			res = getSdCardDrive() + ":" + File.separator + CConst.PhotoFoldername + File.separator;
+		}
+		return res;
+	}
+
+	public String getStrVoiceDirectoryPath() {
+		String res;
+		if (debugMode) {
+			res = getSdCardDrive() + ":" + File.separator + getStrOffset4Debug() + CConst.VoiceFoldername
+					+ File.separator;
+		} else {
+			res = getSdCardDrive() + ":" + File.separator + CConst.VoiceFoldername + File.separator;
 		}
 		return res;
 	}
@@ -147,9 +159,10 @@ public class CYsfSDCHandlerPropertiesBaseData extends Properties {
 	public String getStrQsoLogDirectoryPath() {
 		String res;
 		if (debugMode) {
-			res = getSdCardDrive() + ":" + File.separator + getStrOffset4Debug() + "QSOLOG" + File.separator;
+			res = getSdCardDrive() + ":" + File.separator + getStrOffset4Debug() + CConst.QsoLogFolderName
+					+ File.separator;
 		} else {
-			res = getSdCardDrive() + ":" + File.separator + "QSOLOG" + File.separator;
+			res = getSdCardDrive() + ":" + File.separator + CConst.QsoLogFolderName + File.separator;
 		}
 		return res;
 	}
@@ -176,6 +189,18 @@ public class CYsfSDCHandlerPropertiesBaseData extends Properties {
 
 	public String getStrQsoMsgFilePath() {
 		return getStrQsoLogDirectoryPath() + CConst.STR_QSOMSG;
+	}
+	
+	public String getStrQsoVoiceDirFilePath() {
+		return getStrQsoLogDirectoryPath() + CConst.STR_QSOWAVDIR;
+	}
+
+	public String getStrQsoVoiceFatFilePath() {
+		return getStrQsoLogDirectoryPath() + CConst.STR_QSOWAVFAT;
+	}
+
+	public String getStrQsoVoiceMngFilePath() {
+		return getStrQsoLogDirectoryPath() + CConst.STR_WAVMNG;
 	}
 
 	public String getStrSdCardIdHolderPath() {

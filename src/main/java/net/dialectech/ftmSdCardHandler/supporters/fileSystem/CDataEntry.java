@@ -58,7 +58,6 @@ abstract class CDataEntry {
 	@Setter
 	protected String description = ""; // 必ず１６文字
 
-
 	@Getter
 	@Setter
 	protected String gpsPosition;
@@ -281,25 +280,26 @@ abstract class CDataEntry {
 		}
 		return decodedString;
 	}
-	
 
 	/**
 	 * getSymMeaning()は、SYM(QSO～DIR.datの先頭バイト)の定義を文字列に変換する。<br>
 	 * 各ビットの定義は以下の通り。<br>
 	 * <br>
-	 * 0x01：　０：受信、１：送信<br>
-	 * 0x02：　０：通常、１：GM<br>
-	 * 0x04：　０：通常、１：Wires経由<br>
+	 * 0x01： ０：受信、１：送信<br>
+	 * 0x02： ０：通常、１：GM<br>
+	 * 0x04： ０：通常、１：Wires経由<br>
 	 * 0x10: エラービット（ただし、受信時エラーは不問、送信時エラーは記録）<br>
-	 * 0x20：　０：無線回線でない、１：無線回線である。<br>
-	 * 0x40：　０：既読、１：未読（ただし、送信時は不問、受信時は記録）<br>
-	 * <br> 
+	 * 0x20： ０：無線回線でない、１：無線回線である。<br>
+	 * 0x40： ０：既読、１：未読（ただし、送信時は不問、受信時は記録）<br>
+	 * <br>
 	 * もっとも、これらのうち、同時に「１」となった場合に、各RIGでの取り扱いは異なる。おそらく、IF文で扱いを分岐しており、その分岐の順は各RIGで異なるからであると推認される。<br>
 	 * たとえば、0x06の場合、FT-5Dでは、「WIRES-X経由、ＧＭ付きで、受信したデータの既読」となるが、FTM-300では、「WIRES-X経由、ＧＭ付きで、受信したデータの未読」となる。<br>
-	 * また、　　0x04の場合、FT-5Dでは、「無線経由、受信したデータの既読」となるが、FTM-300では、「無線経由、受信したデータの未読」となる。<br>
-	 * また、　　0x44の場合、FT-5Dでは、「WIRES-X経由、受信したデータの既読」となるが、FTM-300では、「WIRES-X経由、受信したデータの未読」となる。<br>
-	 * また、　　0x84の場合、FT-5Dでは、「--------」となるが、FTM-300では、「WIRES-X経由、受信したデータの未読」となる。<br>
+	 * また、 0x04の場合、FT-5Dでは、「無線経由、受信したデータの既読」となるが、FTM-300では、「無線経由、受信したデータの未読」となる。<br>
+	 * また、
+	 * 0x44の場合、FT-5Dでは、「WIRES-X経由、受信したデータの既読」となるが、FTM-300では、「WIRES-X経由、受信したデータの未読」となる。<br>
+	 * また、 0x84の場合、FT-5Dでは、「--------」となるが、FTM-300では、「WIRES-X経由、受信したデータの未読」となる。<br>
 	 * <br>
+	 * 
 	 * @return
 	 */
 	public String getSymMeaning() {
@@ -357,7 +357,7 @@ abstract class CDataEntry {
 		return decodedString;
 	}
 
-	abstract public void storeOwnData2BufferedBytes();
+	abstract public void storeOwnData2Buffer();
 
 	protected String stringFromTwoDigit(byte b) {
 		byte[] res = new byte[2];
@@ -368,7 +368,6 @@ abstract class CDataEntry {
 		return new String(res);
 	}
 
-
 	/**
 	 * subBytesは、subStringと同様、バイト列sourceから、start番目から始まりendP番目で終わる byte[]列に複写する。
 	 * もし、sourceバイト列の範囲を超えるstart/endが指定されたときには、nullを返す。
@@ -376,7 +375,7 @@ abstract class CDataEntry {
 	 * @param source
 	 * @param start
 	 * @param endP
-	 * @return　sourceからコピーされたバイト列（0オリジン）
+	 * @return sourceからコピーされたバイト列（0オリジン）
 	 */
 	protected byte[] subBytes(byte[] source, int start, int endP) {
 		byte[] res = new byte[endP - start + 1];
@@ -390,4 +389,5 @@ abstract class CDataEntry {
 		}
 		return res;
 	}
+
 }

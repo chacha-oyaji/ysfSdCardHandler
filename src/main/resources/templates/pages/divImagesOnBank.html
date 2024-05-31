@@ -24,14 +24,9 @@
 				<div th:if="${entity.realFileExists}"
 					th:class="${entity.active?'cDivShowImage':'cDivHideImage'}"
 					th:style="|float: left; margin: 2px;border:${entity.borderDefinition()};background-color:${entity.backgroundDefinition};|">
-<!--/*  
+
 					<img
-						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
-						th:style="|width: 160px; height: 120px; margin: 5px;position: relative;|"
-						th:onclick="showDetailOnThisImage([[${entity}]],[[@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);">
-*/-->
-					<img
-						th:src="@{downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
+						th:src="@{/execute/images/downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
 						th:style="|width: 160px; height: 120px; margin: 5px;position: relative;|">
 					<p></p>
 					<table class="CDetailScriptOfBankImage">
@@ -81,12 +76,6 @@
 						<tr>
 							<th>File名</th>
 							<td th:text="${entity.fileCoreName}"></td>
-						</tr>
-						<tr>
-							<th>重複</th>
-							<td th:if="${entity.duplicateOf!=null}"
-								th:text="|■${entity.duplicateOf}■|" style="color: red;"></td>
-							<td th:if="${entity.duplicateOf==null}"></td>
 						</tr>
 					</table>
 				</div>

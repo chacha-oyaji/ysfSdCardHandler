@@ -19,35 +19,35 @@
 		<br style="clear: both;">
 		<form method="post" enctype="multipart/form-data"
 			id="frmshowBankDirContents"
-			th:action="@{/execute/showBankDirContents}">
+			th:action="@{/execute/images/showBankDirContents}">
 			<input type="hidden" name="branchDirName" class="cBranchDirName">
 		</form>
 		<form method="post" enctype="multipart/form-data"
 			id="frmRecallDirContents"
-			th:action="@{/execute/recallDirContentsInBank}">
+			th:action="@{/execute/images/recallDirContentsInBank}">
 			<input type="hidden" name="branchDirName" class="cBranchDirName">
 		</form>
 		<form method="post" enctype="multipart/form-data"
-			id="frmDeleteThisBankDir" th:action="@{/execute/deleteThisBankDir}">
+			id="frmDeleteThisBankDir" th:action="@{/execute/images/deleteThisBankDir}">
 			<input type="hidden" name="branchDirName" class="cBranchDirName">
 		</form>
 		<table style="width: 100%">
 			<tr>
-				<th>復活させるディレクトリ名</th>
+				<th>復活できるBANK名</th>
 				<th>作製日時</th>
 				<th>指示操作</th>
 			</tr>
 			<tr th:each="dirElement,status : ${dirStructureList}">
-				<td th:text="${dirElement.dirName}" th:onClick="submitShowRecoveryDirContents([[${dirElement.dirName}]]);" style="cursor:pointer;"></td>
+				<td th:text="${dirElement.dirName}" th:onClick="submitShowBankContents([[${dirElement.dirName}]]);" style="cursor:pointer;"></td>
 				<td
 					th:text="${#dates.format(dirElement.backupDate,'yyyy/MM/dd HH:mm')}"></td>
 				<td>
 					<!-- 
 				<button
-						th:onClick="submitShowRecoveryDirContents([[${dirElement.dirName}]]);">内容参照</button>
+						th:onClick="submitShowBankContents([[${dirElement.dirName}]]);">内容参照</button>
 				 -->
 					<button
-						th:onClick="submitRecallDirContents([[${dirElement.dirName}]]);">使用面移動</button>
+						th:onClick="submitRecallDirContents([[${dirElement.dirName}]]);">SDCARDに複写</button>
 					<button th:onClick="showReNameplain([[${dirElement.dirName}]]);">名称変更</button>
 					<button th:onClick="deleteThisBank([[${dirElement.dirName}]]);">削除</button>
 				</td>
@@ -56,10 +56,10 @@
 	</div>
 	<div id="divImageListOfBank"
 		style="width: 59%; float: right; display: none;"></div>
-	<div id="divRenameOperator"
+	<div id="divRenameBankOperator"
 		style="width: 59%; float: right; display: none;">
 		<form id="frmRenameOneOfBankDir"
-			th:action="@{/execute/renameOneOfBankDir}" method="post"
+			th:action="@{/execute/images/renameOneOfBankDir}" method="post"
 			enctype="multipart/form-data">
 			<table>
 				<tr>
