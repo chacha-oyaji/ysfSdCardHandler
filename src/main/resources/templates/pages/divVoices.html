@@ -21,6 +21,7 @@
 	}
 
 	function submitRenameVoiceFile() {
+		$(".cVoiceSortingOrder").val($("#slSortingOrderOnVoice").prop('value'));
 		var newFileName = $("#txtNewVoiceFileName").val();
 		var formerFileName = $("#txtFormerVoiceFileName").val();
 		if (newFileName == formerFileName) {
@@ -31,7 +32,7 @@
 			alert("文字列が長すぎます。\n文字数は１２までです。");
 			return;
 		}
-		if (newFileName=="" || newFileName.match("^[ ]+$")) {
+		if (newFileName == "" || newFileName.match("^[ ]+$")) {
 			alert("音声ファイル名は空白文字列は使えません。");
 			return;
 		}
@@ -142,8 +143,7 @@
 							<button th:unless="${entity.active}" type="button"
 								style="background-color: #8f8;"
 								th:onclick="recoverVoiceMarking([[${entity.dataId}]],[[${presentPos}]]);">復活扱い</button>
-							<button type="button"
-								style="background-color: #f66;"
+							<button type="button" style="background-color: #f66;"
 								th:onclick="deleteVoiceCompletely([[${entity.dataId}]],[[${presentPos}]]);">完全削除</button>
 						</td>
 					</tr>
@@ -155,6 +155,7 @@
 				th:action="@{/execute/voices/renameVoiceFile}" method="post"
 				enctype="multipart/form-data">
 				<input type="hidden" class="cVoiceSortingOrder" name="sortingOrder">
+				<input type="hidden" class="cVoiceStartFrom" name="startFrom" th:value="${presentPos}">
 				<table>
 					<tr>
 						<th>変更する音声情報の名称</th>
@@ -172,7 +173,7 @@
 					<tr>
 						<th>操作</th>
 						<td><button type="button"
-								onclick="$('.cVoiceSortingOrder').val($('#slVoiceSortingOrder').prop('value'));submitRenameVoiceFile();">名称変更実行</button></td>
+								onclick="submitRenameVoiceFile();">名称変更実行</button></td>
 					</tr>
 				</table>
 			</form>
