@@ -46,7 +46,7 @@
 	function deleteVoiceMarking(dataId, presentPos) {
 		$(".cVoiceDataId").val(dataId);
 		$(".cVoicePresentVoiceListPos").val(presentPos);
-		$(".cVoiceSortingOrder").val($('#slVoiceSortingOrder').prop('value'));
+		$(".cVoiceSortingOrder").val($('#slSortingOrderOnVoice').prop('value'));
 		submitAndStore2Target("frmDeleteVoiceMarking", "dvVoiceList");
 	}
 
@@ -57,7 +57,7 @@
 			$(".cVoiceDataId").val(dataId);
 			$(".cVoicePresentVoiceListPos").val(presentPos);
 			$(".cVoiceSortingOrder").val(
-					$('#slVoiceSortingOrder').prop('value'));
+					$('#slSortingOrderOnVoice').prop('value'));
 			submitAndStore2Target('frmDeleteVoiceCompletely', 'dvVoiceList');
 		}
 		return;
@@ -66,7 +66,7 @@
 	function recoverVoiceMarking(dataId, presentPos) {
 		$(".cVoiceDataId").val(dataId);
 		$(".cVoicePresentVoiceListPos").val(presentPos);
-		$(".cVoiceSortingOrder").val($('#slVoiceSortingOrder').prop('value'));
+		$(".cVoiceSortingOrder").val($('#slSortingOrderOnVoice').prop('value'));
 		submitAndStore2Target("frmRecoverVoiceMarking", "dvVoiceList");
 	}
 </script>
