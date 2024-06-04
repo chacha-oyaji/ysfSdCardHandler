@@ -10,8 +10,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.servlet.ModelAndView;
 import jakarta.servlet.http.HttpSession;
+import net.dialectech.ftmSdCardHandler.actions.suppoters.CHandlerActionFundamental;
 import net.dialectech.ftmSdCardHandler.data.CData4Upload;
-import net.dialectech.ftmSdCardHandler.supporters.CHandlerActionFundamental;
+import net.dialectech.ftmSdCardHandler.data.supporters.CDataEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 
@@ -59,6 +60,11 @@ public class CHandlerBaseAction extends CHandlerActionFundamental {
 
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divResOfSettlement");
 		return mav;
+	}
+
+	@Override
+	protected LinkedList<CDataEntry> createResultContentsListSeed() {
+		return new LinkedList<CDataEntry>() ;
 	}
 
 }

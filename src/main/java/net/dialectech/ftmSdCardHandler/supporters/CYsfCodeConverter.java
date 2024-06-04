@@ -15,7 +15,7 @@ public class CYsfCodeConverter {
 	public CYsfCodeConverter() {
 	}
 
-	static String ysf2Utf = "ＸＸＸＸＸＸＸＸＸＸＸＸＸＸＸＸ" 
+	static String ysf2Utf = "ＸＸＸＸＸＸＸＸＸＸ\nＸＸ\rＸＸ"  // BACK-SLASHはESCAPEを含むので２文字多く見える。^^
 			+ "ＸＸＸＸＸＸＸＸＸＸＸＸＸＸＸＸ" 
 			+ " !'#$%&'()" 
 			+ "*+,-./0123" 
@@ -23,7 +23,7 @@ public class CYsfCodeConverter {
 			+ ">?@ABCDEFG"
 			+ "HIJKLMNOPQ" 
 			+ "RSTUVWXYZ[" 
-			+ "\\]^_`abcde" // BACK-SLASHはESCAPEを含むので一文字多く見える。^^
+			+ "\\]^_`abcde" // BACK-SLASHはESCAPEを含むので１文字多く見える。^^
 			+ "fghijklmno" 
 			+ "pqrstuvwxy" 
 			+ "z{|}~ＸＸＸＸＸ" 

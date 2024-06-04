@@ -23,6 +23,7 @@
 		if (errorMsg != "") {
 			// エラーがあったときにはこちらが実行されます。
 		} else {
+			// 画像処理プレーンに表示があったときには、併せてBANK処理プレーンにも表示を行うことにする。
 			$("#btnShowDirectory4Bank").click();
 		}
 		$("#dlgDetailDialog").dialog("close");
@@ -110,7 +111,7 @@
 				<th>記述変更指示</th>
 				<td style="text-align: left;"><input type="text"
 					id="txtSourceOfChangeDescription" style="width: 14em; float: left;"
-					oninput="executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol');">
+					oninput="executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol',11);">
 					<button type="button" onclick="requestChangeDescription();"
 						style="background-color: #ccf;">変更実行</button>
 					<button type="button"
@@ -174,7 +175,7 @@
 					<img
 						th:src="@{/execute/images/downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}"
 						style="width: 160px; height: 120px; margin: 5px; position: relative;"
-						th:onclick="showDetailOnThisImage([[${entity}]],[[@{/execute/images/downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol');">
+						th:onclick="showDetailOnThisImage([[${entity}]],[[@{/execute/images/downloadImage(fileName2Dowload=${entity.fileCoreName},uniqId=${entity.generatedUniqString},branchDirName=${branchDirName})}]]);executeDescriptionCount('txtSourceOfChangeDescription','txtDescriptionLiteralVol',11);">
 					<table class="CDetailScriptOfImage">
 						<tr>
 							<th>管理ID</th>

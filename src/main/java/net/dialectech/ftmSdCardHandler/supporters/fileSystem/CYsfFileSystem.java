@@ -12,10 +12,12 @@ import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
-
 import lombok.Getter;
 import lombok.Setter;
+import net.dialectech.ftmSdCardHandler.data.CImageEntry;
+import net.dialectech.ftmSdCardHandler.data.CMessageEntry;
+import net.dialectech.ftmSdCardHandler.data.CVoiceEntry;
+import net.dialectech.ftmSdCardHandler.data.supporters.CDataEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 
@@ -35,22 +37,22 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 	private boolean mouonted = false;
 
 	/*
-	 * MESSAGEの処理と、VOICEの処理はBANKで扱わないので、CYsfFileSystemCorePartクラスでは扱わず、こちらで一括して処理することにした。
+	 * MESSAGEの処理と、VOICEの処理はBANKで扱わないので、CYsfFileSystemCorePartクラスでは扱わず、
+	 * こちらで一括して処理することにした。
 	 */
 
 	// MESSAGE関連のデータ列
-	@Getter
-	@Setter
-	protected LinkedList<CMessageEntry> msgDirListWithDisplayOrder;
 	@Getter
 	@Setter
 	protected LinkedList<CMessageEntry> msgDirList;
 	@Setter
 	@Getter
 	protected int presentMaxNumberInMessage = 0;
+	@Setter
+	@Getter
+	protected boolean messageBankChanged; // QSOMSG.DAT中のデータを書き換える必要があるかどうかを示す。
 
 	// VOICE関連のデータ列
-	private byte[] waveMgr; // WAVMGRファイル内のデータをそのまま保持
 	@Getter
 	@Setter
 	private LinkedList<CVoiceEntry> voiceDirListWithDisplayOrder;
@@ -71,7 +73,7 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 		System.out.println("Singleton Constructor: " + this.toString());
 	}
 
-	public CImageEntry addNewFile(String myCallSign, String description2Change) {
+	public CImageEntry addNewPictFile(String myCallSign, String description2Change) {
 		String newFileName = createNewFileNameByIndex(++presentMaxNumberInPictFileName);
 		CImageEntry newImageDirData = new CImageEntry(prop.getRadioId(), myCallSign, "", newFileName,
 				presentMaxNumberInPictFileName, description2Change);
@@ -96,7 +98,6 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 	public void clearAll() {
 		pctDirListWithDisplayOrder = new LinkedList<CImageEntry>();
 		pctDirList = new LinkedList<CImageEntry>();
-		msgDirListWithDisplayOrder = new LinkedList<CMessageEntry>();
 		msgDirList = new LinkedList<CMessageEntry>();
 		presentMaxNumberInPictFileName = 0;
 		mouonted = false;
@@ -372,7 +373,6 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 				FileInputStream fisMsgFat = new FileInputStream(qsoMsgFat);
 				FileInputStream fisMsg = new FileInputStream(qsoMsg);) {
 
-			msgDirListWithDisplayOrder = new LinkedList<CMessageEntry>();
 			msgDirList = new LinkedList<CMessageEntry>();
 
 			// まずはfatを取り込んで、チェッカーを生成する。
@@ -424,10 +424,9 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 						messageEntry.setActive(false);
 					}
 				}
-				msgDirListWithDisplayOrder.addFirst(messageEntry);
 				msgDirList.add(messageEntry);
 			}
-
+			messageBankChanged = false;
 		} catch (IOException e) {
 			// TODO 自動生成された catch ブロック
 			e.printStackTrace();
@@ -487,7 +486,7 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 						voiceEntry.setActive(false);
 					}
 				}
-				voiceEntry.setDataId(index+1);
+				voiceEntry.setDataId(index + 1);
 				// 次にここで仮設定したDirEntryにおいて対応させられている音声情報が確定したので、これをエントリさせる。
 				voiceDirList.add(voiceEntry);
 				voiceDirListWithDisplayOrder.addFirst(voiceEntry);
@@ -540,6 +539,13 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 			return;
 		}
 
+		File qsoMsgContents;
+		qsoMsgContents = new File(prop.getStrQsoMsgFilePath());
+		if (!qsoMsgContents.exists()) {
+			errorMessageList.add("QSOMSG.datが見当たりません。");
+			return;
+		}
+
 		File qsoMgr;
 		qsoMgr = new File(prop.getStrQsoMngFilePath());
 		if (!qsoMgr.exists()) {
@@ -547,18 +553,45 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 			return;
 		}
 
-		int efficientDirSize = defragmentationOfPctDirList();
+		int efficientImageDirSize = getPctDirList().size();
+		presentMaxNumberInMessage = getMsgDirList().size();
+
+		// メッセージ自体を弄っていたら（QSOMSG.datの内容が書き換わっていたら）、DIRECTORYを書き換えておく
+		if (messageBankChanged) {
+			int index = 0;
+			try (FileOutputStream fos4Msg = new FileOutputStream(qsoMsgContents);) {
+				if (msgDirList!=null && msgDirList.size()>0) {
+					for (CMessageEntry ent : msgDirList) {
+						ent.setStartAddressInQSOMessageOf(index++);
+						fos4Msg.write(ent.getBMessage());
+					}
+				}
+			} catch (Exception e) {
+				System.out.println("ERROR on Message Concerning File Manupilation (QSOMSG.dat): " + e.getLocalizedMessage());
+			}
+			messageBankChanged = false ;
+		}
 
 		try (FileOutputStream fos4Dir = new FileOutputStream(qsoMsgDir);
 				FileOutputStream fos4Fat = new FileOutputStream(qsoMsgFat);) {
 
-			saveDirAndFatOn(msgDirList, fos4Dir, fos4Fat, efficientDirSize);
+			saveDirAndFatOn(msgDirList, fos4Dir, fos4Fat, presentMaxNumberInMessage);
 			saveGeneralManager(generalMgr, qsoMgr, presentMaxNumberInMessage, presentMaxNumberInPictFileName,
-					efficientDirSize);
+					efficientImageDirSize);
 		} catch (Exception e) {
-			System.out.println("ERROR on PICT Concerning File Manupilation: " + e.getLocalizedMessage());
+			// System.out.println("ERROR on Message Concerning File Manupilation(saveAllOfFilesOnMessage): " + e.getLocalizedMessage());
+			e.printStackTrace();
 		}
+	}
 
+	public void addMessageEntry(CMessageEntry msg) {
+		msgDirList.add(msg);
+		messageBankChanged = true;
+	}
+
+	public void deleteMessageEntry(CMessageEntry msg) {
+		msgDirList.remove(msg);
+		messageBankChanged = true;
 	}
 
 	public void saveAllOfFilesOnPict(LinkedList<String> errorMessageList) {
@@ -594,6 +627,7 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 		}
 
 		int efficientDirSize = defragmentationOfPctDirList();
+		presentMaxNumberInMessage = getMsgDirList().size();
 
 		try (FileOutputStream fos4Dir = new FileOutputStream(qsoPctDir);
 				FileOutputStream fos4Fat = new FileOutputStream(qsoPctFat);) {
@@ -645,6 +679,17 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 
 	}
 
+	/**
+	 * WAVMGR.dat, QSOMGR.dat共通に利用できるオンメモリのマネージャBYTE列をSD-CARDに記録するためのprivate
+	 * Function. WAVMGR.datでは、
+	 * 
+	 * @param manager
+	 * @param managerFile
+	 * @param presentMaxNumberInMessage
+	 * @param presentMaxNumberInPictFileName
+	 * @param efficientDirSize
+	 * @throws IOException
+	 */
 	private void saveGeneralManager(byte[] manager, File managerFile, int presentMaxNumberInMessage,
 			int presentMaxNumberInPictFileName, int efficientDirSize) throws IOException {
 		// 最後にQSOPCTMNGの生成
@@ -658,8 +703,13 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 				manager[0x10] = (byte) ((efficientDirSize >> 8) & 0xff);
 				manager[0x11] = (byte) (efficientDirSize & 0xff);
 			} else {
-				manager[0x10] = (byte) 0xff;
-				manager[0x11] = (byte) 0xff;
+				if (efficientDirSize < 0) {
+					manager[0x10] = (byte) 0;
+					manager[0x11] = (byte) 0;
+				} else {
+					manager[0x10] = (byte) 0xff;
+					manager[0x11] = (byte) 0xff;
+				}
 			}
 
 			int nextNumberInFileName2Write = presentMaxNumberInPictFileName + 1;
@@ -668,7 +718,8 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 
 			fos4Mng.write(manager); // 実ファイルへの書き込みはMSG関連の処理をする時点で。
 		} catch (IOException e) {
-			System.out.println("ERROR on Manager Concerning File Manupilation: QSOMGR.dat : " + e.getLocalizedMessage());
+			System.out
+					.println("ERROR on Manager Concerning File Manupilation: QSOMGR.dat : " + e.getLocalizedMessage());
 			throw new IOException();
 		}
 	}
@@ -678,7 +729,6 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 	}
 
 	public CVoiceEntry findVoiceFile(String description2Change) {
-		CVoiceEntry res = null;
 		for (CVoiceEntry data : voiceDirList) {
 			if (description2Change.equals(data.getFileNameCore()))
 				return data;
@@ -718,27 +768,19 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 			return;
 		}
 
-		// まずは、DIRを記録する。
-		int efficientDirSize = defragmentationOfVoiceDirList();
+		int efficientVoiceDirSize = defragmentationOfVoiceDirList();
 
 		try (FileOutputStream fos4Dir = new FileOutputStream(qsoVoiceDir);
 				FileOutputStream fos4Fat = new FileOutputStream(qsoVoiceFat);) {
 
-			saveDirAndFatOn(voiceDirList, fos4Dir, fos4Fat, efficientDirSize);
-			
-			// voiceMgrは0x10～0x1f番地までは変則的に０を設定。
-			for ( int index=0x10 ; index<0x20 ; ++index)
-				voiceMgr[index]= (byte) 0 ;
-			saveGeneralManager(voiceMgr, wavMgr, efficientDirSize, 0, efficientDirSize);
+			// まずは、DIR/FATを記録する。
+			saveDirAndFatOn(voiceDirList, fos4Dir, fos4Fat, efficientVoiceDirSize);
+			// 最後にWAVMGRを記録
+			saveGeneralManager(voiceMgr, wavMgr, efficientVoiceDirSize, -1, -1); // 第５、第６パラメータを-1にすると、Managerファイルの0x10～0x13は全て０になる筈。
 		} catch (Exception e) {
 			// TODO 自動生成された catch ブロック
 			System.out.println("ERROR on Voice Concerning File Manupilation: " + e.getLocalizedMessage());
 		}
-
-		// 次にFATを記録
-
-		// 最後にWAVMGRを記録
-		byte[] generalMgr4Voice = new byte[32];
 
 	}
 

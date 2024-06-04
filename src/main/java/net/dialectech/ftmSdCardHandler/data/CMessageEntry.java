@@ -1,9 +1,12 @@
-package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
+package net.dialectech.ftmSdCardHandler.data;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
+
 import lombok.Getter;
+import net.dialectech.ftmSdCardHandler.data.supporters.CDataEntry;
+import net.dialectech.ftmSdCardHandler.supporters.CConst;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 
@@ -15,37 +18,48 @@ public class CMessageEntry extends CDataEntry {
 	@Getter
 	private int startAddressInQSOMSG;
 
-	private byte[] message = new byte[80]; //
+	@Getter
+	private byte[] bMessage = new byte[CConst.MAX_MESSAGE_BYTES_PER_PACKET]; //
 
 	/**
 	 * Handlerプログラムで追加登録するときに用いる構築子
 	 * 
 	 * @param radioId
+	 * @param destination YSFのMESSAGE機能では、送信メッセージについてはリグ上でのリスト表示で使われるので、逆にこれを利用する。
 	 * @param callSign
 	 * @param nodeId
-	 * @param newFileName
+	 * @param message
+	 * @param dataId
 	 */
-	public CMessageEntry(String radioId, String callSign, String nodeId, String message, int dataId) {
-		sym = 0;
+	public CMessageEntry(String radioId, String destination, String callSign, String nodeId, String message,
+			int dataId) {
+		sym = 0x61;
 		this.dataId = dataId;
 		this.radioId = radioId;
 		this.myCallSign = callSign;
 		this.nodeId = nodeId;
-		this.radioId = radioId;
-		this.nodeId = nodeId;
-		this.destination = "ALL";
+		this.destination = destination;
 		this.myCallSign = callSign;
 		this.date2Send = new Date();
 		this.date2Receive = new Date();
 		this.baseDate = new Date();
 		duplicateOf = null;
-		int messageLength = copyBytes2LimitedBytes(CYsfCodeConverter.getInstance().utf82YsfByte(message), this.message);
+		fillWithSpace(this.bMessage, ' ');
+		int messageLength = copyBytes2LimitedBytes(CYsfCodeConverter.getInstance().utf82YsfByte(message),
+				this.bMessage);
 		if (messageLength > 15)
 			this.description = message.substring(0, 15);
 		else
 			this.description = message;
 		generatedUniqString = UUID.randomUUID().toString().replaceAll("\\-", "");
-		realFileExists = true ;	// Messageはオンメモリで展開するので、常に実データはあるものとする。
+		realFileExists = true; // Messageはオンメモリで展開するので、常に実データはあるものとする。
+		active = true;
+	}
+
+	private void fillWithSpace(byte[] bMessage, char c) {
+		int len = bMessage.length;
+		for (int i = 0; i < len; ++i)
+			bMessage[i] = (byte) c;
 	}
 
 	/**
@@ -56,6 +70,7 @@ public class CMessageEntry extends CDataEntry {
 	 * @param realFileName2DuplicationCheck
 	 */
 	public CMessageEntry(byte[] dirEntrySource, int index, byte[] wholeMessageContents) {
+		CYsfCodeConverter converter = CYsfCodeConverter.getInstance();
 		// まずは、自分のところに取り込む。
 		dataEntry = dirEntrySource;
 		sym = dirEntrySource[0];
@@ -65,9 +80,9 @@ public class CMessageEntry extends CDataEntry {
 		byte[] nodeId = subBytes(dirEntrySource, 0x04, 0x08);
 		this.nodeId = new String(nodeId);
 		byte[] destination = subBytes(dirEntrySource, 0x09, 0x12);
-		this.destination = new String(destination);
+		this.destination = converter.ysfByte2Utf8(destination);
 		byte[] myCallSign = subBytes(dirEntrySource, 0x1e, 0x27);
-		this.myCallSign = new String(myCallSign);
+		this.myCallSign = converter.ysfByte2Utf8(myCallSign);
 		byte[] date = subBytes(dirEntrySource, 0x2e, 0x33);
 		this.date2Send = dateFromYaesuExp(date);
 		date = subBytes(dirEntrySource, 0x34, 0x39);
@@ -80,13 +95,14 @@ public class CMessageEntry extends CDataEntry {
 		this.startAddressInQSOMSG = (int) ((startAddressInQSOMSG[0] << 24) & 0xff000000)
 				+ (int) ((startAddressInQSOMSG[1] << 16) & 0xff0000) + (int) ((startAddressInQSOMSG[2] << 8) & 0xff00)
 				+ (int) (startAddressInQSOMSG[3] & 0xff);
-		copyBytesFromMountedWholeBytes(wholeMessageContents, this.startAddressInQSOMSG, 80, message);
+		copyBytesFromMountedWholeBytes(wholeMessageContents, this.startAddressInQSOMSG,
+				CConst.MAX_MESSAGE_BYTES_PER_PACKET, bMessage);
 
 		duplicateOf = null;
 		byte[] gpsPosition = subBytes(dirEntrySource, 0x64, 0x77);
 		this.gpsPosition = new String(gpsPosition);
 		generatedUniqString = UUID.randomUUID().toString().replaceAll("\\-", "");
-		realFileExists = true ;	// Messageはオンメモリで展開するので、常に実データはあるものとする。
+		realFileExists = true; // Messageはオンメモリで展開するので、常に実データはあるものとする。
 	}
 
 	private int copyBytes2LimitedBytes(byte[] source, byte[] destination) {
@@ -108,19 +124,59 @@ public class CMessageEntry extends CDataEntry {
 		}
 
 	}
-	
+
+	/**
+	 * YAESUフォーマットで記録されているmessageデータをUTF-8形式で返す。
+	 * 
+	 * @return
+	 */
 	public String getMessage() {
-		return CYsfCodeConverter.getInstance().ysfByte2Utf8(message);
+		return CYsfCodeConverter.getInstance().ysfByte2Utf8(bMessage);
+	}
+
+	/**
+	 * YAESUフォーマットで記録されているDestinationデータをUTF-8形式で返す。
+	 * 
+	 * @return
+	 */
+	@Override
+	public String getDestination() {
+		return CYsfCodeConverter.getInstance().ysfByte2Utf8(CYsfCodeConverter.getInstance().utf82YsfByte(destination));
+	}
+
+	/**
+	 * YAESUフォーマットで記録されているmessageデータをUTF-8形式で返す。
+	 * 
+	 * @return
+	 */
+	public String getMessageHtml() {
+		String res = CYsfCodeConverter.getInstance().ysfByte2Utf8(bMessage).replaceAll(">", "&gt;")
+				.replaceAll("<", "&lt;").replaceAll("\n", "<br>\n").replaceAll(" ", "&nbsp;");
+		return res;
+	}
+
+	/**
+	 * YAESUフォーマットで記録されているmessageデータをUTF-8形式で返す。
+	 * 
+	 * @return
+	 */
+	public void setMessage(String strByUtf8) {
+		for (int index = 0; index < CConst.MAX_MESSAGE_BYTES_PER_PACKET; ++index)
+			bMessage[index] = (byte) ' ';
+		byte[] source = CYsfCodeConverter.getInstance().utf82YsfByte(strByUtf8);
+		this.copyBytes2LimitedBytes(source, bMessage);
 	}
 
 	@Override
 	public void storeOwnData2Buffer() {
+		CYsfCodeConverter ysfConverter = CYsfCodeConverter.getInstance();
+
 		dataEntry[0] = sym;
 		byte[] binData = nodeId.getBytes(StandardCharsets.UTF_8);
 		binData = fillWithByteOf(binData, (byte) 0x20, 5);
 		bytes2ByfferPoint(binData, 0x04, 5);
 
-		binData = destination.getBytes(StandardCharsets.UTF_8);
+		binData = ysfConverter.utf82YsfByte(destination);
 		binData = fillWithByteOf(binData, (byte) 0x20, 10);
 		bytes2ByfferPoint(binData, 0x09, 10);
 		// 0x20で埋めるところ
@@ -155,10 +211,10 @@ public class CMessageEntry extends CDataEntry {
 		binData = fillWithByteOf(null, (byte) 0x20, 5);
 		bytes2ByfferPoint(binData, 0x4b, 5);
 
-		dataEntry[0x50] = (byte) ((messageSize >> 24) & 0x0ff);
-		dataEntry[0x51] = (byte) ((messageSize >> 16) & 0xff);
-		dataEntry[0x52] = (byte) ((messageSize >> 8) & 0xff);
-		dataEntry[0x53] = (byte) (messageSize & 0xff);
+		dataEntry[0x50] = (byte) ((startAddressInQSOMSG >> 24) & 0x0ff);
+		dataEntry[0x51] = (byte) ((startAddressInQSOMSG >> 16) & 0xff);
+		dataEntry[0x52] = (byte) ((startAddressInQSOMSG >> 8) & 0xff);
+		dataEntry[0x53] = (byte) (startAddressInQSOMSG & 0xff);
 
 //		binData = fileCoreName.getBytes(StandardCharsets.UTF_8);
 //		binData = fillWithByteOf(binData, (byte) 0xff, 16);
@@ -170,5 +226,28 @@ public class CMessageEntry extends CDataEntry {
 
 	public void clearMessage() {
 
+	}
+
+	public void setStartAddressInQSOMessageOf(int index) {
+		startAddressInQSOMSG = index * CConst.MAX_MESSAGE_BYTES_PER_PACKET;
+	}
+
+	public int getIndexByStartAddressInQSOMessage() {
+		return startAddressInQSOMSG / CConst.MAX_MESSAGE_BYTES_PER_PACKET;
+	}
+
+	@Override
+	public String getRepresentativesName() {
+		// TODO 自動生成されたメソッド・スタブ
+		return getMessage();
+	}
+
+	@Override
+	public Date getRepresentativeTime() {
+		// TODO 自動生成されたメソッド・スタブ
+		if (isThisTransmission())
+			return this.date2Send;
+		else
+			return this.baseDate;
 	}
 }

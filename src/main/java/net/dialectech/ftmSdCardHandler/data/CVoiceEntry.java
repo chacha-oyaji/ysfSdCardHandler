@@ -1,14 +1,16 @@
-package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
+package net.dialectech.ftmSdCardHandler.data;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.dialectech.ftmSdCardHandler.data.supporters.CDataEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
@@ -99,7 +101,6 @@ public class CVoiceEntry extends CDataEntry {
 	public void executeChangeFileName(String fileName) {
 		try {
 			FileUtils.moveFile(convertUtf2FileOfSourceName(this.getFileName()), convertUtf2FileOfSourceName(fileName));
-
 		} catch (IOException e) {
 			// TODO 自動生成された catch ブロック
 			e.printStackTrace();
@@ -200,7 +201,17 @@ public class CVoiceEntry extends CDataEntry {
 		byteOfFileName[14] = 'a';
 		byteOfFileName[15] = 'v';
 		
-		return byteOfFileName ;
-		
+		return byteOfFileName ;		
+	}
+
+	@Override
+	public String getRepresentativesName() {
+		return getFileNameCore();
+	}
+
+	@Override
+	public Date getRepresentativeTime() {
+		// TODO 自動生成されたメソッド・スタブ
+		return date2Send;
 	}
 }

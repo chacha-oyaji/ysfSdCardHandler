@@ -6,12 +6,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.Collator;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
@@ -25,14 +21,13 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import jakarta.servlet.http.HttpSession;
+import net.dialectech.ftmSdCardHandler.actions.suppoters.CHandlerActionFundamental;
 import net.dialectech.ftmSdCardHandler.data.CData4Upload;
+import net.dialectech.ftmSdCardHandler.data.CVoiceEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
-import net.dialectech.ftmSdCardHandler.supporters.CHandlerActionFundamental;
-import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltSpringFileStream;
-import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CVoiceEntry;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 
 @Controller
@@ -85,8 +80,7 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createVoiceList(mav, params, fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
-
+		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 		return mav;
 	}
 
@@ -116,7 +110,7 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createVoiceList(mav, params, fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 
 		return mav;
 	}
@@ -137,7 +131,7 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createVoiceList(mav, params, fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 
 		return mav;
 	}
@@ -158,7 +152,7 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createVoiceList(mav, params, fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 
 		return mav;
 	}
@@ -290,8 +284,7 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		mav.addObject("voiceList", voiceList);
 
 		// Dummy parameterを設定。
-		params.setStartFrom(1);
-		mav = createVoiceList(mav, params, voiceList, errorMessageList);
+		mav = createContentsList(mav, 1, params.getSortingOrder(), voiceList, errorMessageList);
 		return mav;
 	}
 
@@ -319,103 +312,14 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 				voiceList.add(f);
 			}
 
-		mav = createVoiceList(mav, param, voiceList, errorMessageList);
+		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
+		mav = createContentsList(mav, param.getStartFrom(),param.getSortingOrder(), voiceList, errorMessageList);
 		return mav;
 	}
 
-	private ModelAndView createVoiceList(ModelAndView mav, CData4Upload param, LinkedList<CVoiceEntry> voiceList,
-			LinkedList<String> errorMessageList) {
-		CYsfFileSystem fs = CYsfFileSystem.getInstance();
-		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
-
-		String sortingOrder = null;
-		int startFrom = param.getStartFrom() == 0 ? 0 : param.getStartFrom() - 1; // LinkedListは0オリジン。
-
-		// 一応、保険程度に。
-		if (param.getSortingOrder() == null) {
-			sortingOrder = "timeReverseOrder";
-		} else {
-			sortingOrder = param.getSortingOrder();
-		}
-
-		Comparator<CVoiceEntry> comparator;
-		CYsfCodeConverter codeConverter = CYsfCodeConverter.getInstance();
-		// この程度なので、Builder Patternとか、Strategy Patternとかは使わなくてよいだろう。
-		switch (sortingOrder) {
-		case "timeReverseOrder":
-			comparator = new Comparator<CVoiceEntry>() {
-				@Override
-				public int compare(CVoiceEntry o1, CVoiceEntry o2) {
-					if (o1.getDate2Send().before(o2.getDate2Send())) {
-						return -1;
-					} else if (o1.getDate2Send().after(o2.getDate2Send())) {
-						return 1;
-					} else {
-						return 0;
-					}
-				}
-			};
-			break;
-		case "timeOrder":
-			comparator = new Comparator<CVoiceEntry>() {
-				@Override
-				public int compare(CVoiceEntry o1, CVoiceEntry o2) {
-					if (o1.getDate2Send().after(o2.getDate2Send())) {
-						return -1;
-					} else if (o1.getDate2Send().before(o2.getDate2Send())) {
-						return 1;
-					} else {
-						return 0;
-					}
-				}
-			};
-			break;
-		case "nameReverseOrder":
-			comparator = new Comparator<CVoiceEntry>() {
-				@Override
-				public int compare(CVoiceEntry o1, CVoiceEntry o2) {
-					Collator col = Collator.getInstance(Locale.JAPAN);
-					return -col.compare(o1.getFileNameCore(), o2.getFileNameCore());
-				}
-			};
-			break;
-		case "nameOrder":
-		default:
-			comparator = new Comparator<CVoiceEntry>() {
-				@Override
-				public int compare(CVoiceEntry o1, CVoiceEntry o2) {
-					Collator col = Collator.getInstance(Locale.JAPAN);
-					return col.compare(o1.getFileNameCore(), o2.getFileNameCore());
-				}
-			};
-			break;
-		}
-
-		Collections.sort(voiceList, comparator);
-
-		// 要素削除のためにリスト現在値より少ないファイル数になったときには、ひとつ前の値にする。
-		if (fs.getVoiceDirList().size() > 0) {
-			if (startFrom != 1 && startFrom >= fs.getVoiceDirList().size()) {
-				int block = (startFrom - 1) / prop.getListStepSize();
-				startFrom = prop.getListStepSize() * block;
-			}
-		}
-
-		int listUntil = startFrom + prop.getListStepSize();
-		if (listUntil >= voiceList.size())
-			listUntil = voiceList.size();
-
-		LinkedList<Integer> targetPosList = new LinkedList<Integer>();
-		for (int briefStop = 0; briefStop < voiceList.size(); briefStop += prop.getListStepSize())
-			targetPosList.add(briefStop + 1); // 表示は１オリジン。
-		voiceList = new LinkedList<CVoiceEntry>(voiceList.subList(startFrom, listUntil));
-
-		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		// このメソッドで特有となる各データを更に記録。
-		mav.addObject("presentPos", startFrom + 1); // 今表示しようとしている音声ファイルリストのリスト先頭ID候補の値。
-		mav.addObject("targetPosList", targetPosList); // リスト先頭ID候補を記録したリスト。
-		mav.addObject("voiceList", voiceList);
-		return mav;
+	@Override
+	protected LinkedList<CVoiceEntry> createResultContentsListSeed() {
+		return new LinkedList<CVoiceEntry>();
 	}
 
 }

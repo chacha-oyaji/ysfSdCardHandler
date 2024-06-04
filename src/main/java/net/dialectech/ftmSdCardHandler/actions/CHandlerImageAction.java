@@ -10,17 +10,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
-import java.text.Collator;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,16 +39,17 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 import org.thymeleaf.util.StringUtils;
 
 import jakarta.servlet.http.HttpSession;
+import net.dialectech.ftmSdCardHandler.actions.suppoters.CHandlerActionFundamental;
+import net.dialectech.ftmSdCardHandler.data.CBankEntry;
 import net.dialectech.ftmSdCardHandler.data.CData4Upload;
-import net.dialectech.ftmSdCardHandler.data.CDirStructure;
+import net.dialectech.ftmSdCardHandler.data.CImageEntry;
+import net.dialectech.ftmSdCardHandler.data.CVoiceEntry;
+import net.dialectech.ftmSdCardHandler.data.supporters.CDataEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
-import net.dialectech.ftmSdCardHandler.supporters.CHandlerActionFundamental;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltSpringFileStream;
-import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CImageEntry;
-import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CVoiceEntry;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystemCorePart;
 
@@ -191,11 +188,37 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 
 		try {
 			FileUtils.forceDelete(bankDir);
+			errorMessageList.add("削除完了しました。");
 		} catch (IOException e) {
 			errorMessageList.add("削除に失敗しました。");
 		}
-		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divResDeleteBankDir");
+
+		// 次に、BANK-LIST表示のための処理
+
+		LinkedList<CBankEntry> dirStructureList = createBankDirStructureList();
+
+		setAllParameters4Mav(mav, errorMessageList, param.getBranchDirName(), fs, "", prop, "pages/divShowBankList");
+		mav = createContentsList(mav, param.getStartFrom(), param.getSortingOrder(), dirStructureList,
+				errorMessageList);
+
 		return mav;
+	}
+
+	private LinkedList<CBankEntry> createBankDirStructureList() {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		String bankDirectoryPosition = prop.getRootDir4Bank();
+		File bankDirectory = new File(bankDirectoryPosition);
+		LinkedList<CBankEntry> dirStructureList = new LinkedList<CBankEntry>();
+
+		for (File f : bankDirectory.listFiles()) {
+			// BANK統括ディレクトリ（リカバリディレクトリ）には、各BANKに係るフォルダが配置されるとともに、画像データはその個別フォルダに配置するようにした。
+			if (f.isDirectory()) {
+				CBankEntry data = new CBankEntry(f.getAbsoluteFile(), new Date(f.lastModified()));
+				dirStructureList.add(data);
+			}
+		}
+
+		return dirStructureList;
 	}
 
 	@RequestMapping(value = "downloadImage", method = { RequestMethod.POST, RequestMethod.GET })
@@ -240,9 +263,10 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		File dir = new File(prop.getStrVoiceDirectoryPath());
 		String strTest = "!#$%&(t);+-_";
 		if (!strTest.matches("[a-zA-Z0-9\\_!#$%&\\(\\)\\+\\-;]+")) {
-			System.out.println("所定以外のコードを使用!") ;
+			System.out.println("所定以外のコードを使用!");
 		}
-		String newBase = CYsfCodeConverter.getInstance().ysfByte2Utf8(CYsfCodeConverter.getInstance().utf82YsfByte(strTest)) ;
+		String newBase = CYsfCodeConverter.getInstance()
+				.ysfByte2Utf8(CYsfCodeConverter.getInstance().utf82YsfByte(strTest));
 //		for (File elem : dir.listFiles()) {
 //			byte[] fName = elem.getName().getBytes();
 //			System.out.println("** " + CYsfCodeConverter.getInstance().ysfByte2Utf8(fName));
@@ -505,41 +529,35 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		LinkedList<String> errorMessageList;
 		errorMessageList = new LinkedList<String>();
 
-//		if (!fs.isSdCardMounted()) {
-//			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
-//			setAllParameters4Mav(mav, errorMessageList, "", fs, getPresentUsingBranchName4Display(), prop,
-//					"pages/divResRenameOneOfBankDir");
-//			fs.clearAll();
-//			return mav;
-//		}
-
 		String newBranchDirName = params.getNewBranchDirName();
 		String targetBranchDirName = params.getBranchDirName();
 
 		if (newBranchDirName != null && newBranchDirName.equals(targetBranchDirName)) {
+			// Fornt-Endで処理済みなので、ここは通らないはず。
 			errorMessageList.add("元の名称と同じなので、何もしません。");
 			setAllParameters4Mav(mav, errorMessageList, params.getBranchDirName(), fs, "", prop,
 					"pages/divResRenameOneOfBankDir");
-
 			mav.addObject("newBranchDirName", newBranchDirName);
 			return mav;
 		}
 		// 新規名称が既にあるものかどうか？なければそのままOK、あったら、自動で付与された名称（但し酷似^^;）を新バンク名として利用
 		newBranchDirName = dupNameCheckAndRename2UniqueName(newBranchDirName);
-
-		// System.out.println(">>" + newBranchDirName);
+		File newBranchDir = new File(prop.getRootDir4Bank() + newBranchDirName);
 		try {
-			FileUtils.moveDirectory(new File(prop.getRootDir4Bank() + targetBranchDirName),
-					new File(prop.getRootDir4Bank() + newBranchDirName));
+			FileUtils.moveDirectory(new File(prop.getRootDir4Bank() + targetBranchDirName), newBranchDir);
 		} catch (IOException e) {
 			// TODO 自動生成された catch ブロック
 			e.printStackTrace();
 		}
 
-		setAllParameters4Mav(mav, errorMessageList, params.getBranchDirName(), fs, "", prop,
-				"pages/divResRenameOneOfBankDir");
+		// 次に、BANK-LIST表示のための処理
 
-		mav.addObject("newBranchDirName", newBranchDirName);
+		LinkedList<CBankEntry> dirStructureList = createBankDirStructureList();
+
+		setAllParameters4Mav(mav, errorMessageList, params.getBranchDirName(), fs, "", prop, "pages/divShowBankList");
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(), dirStructureList,
+				errorMessageList);
+
 		return mav;
 	}
 
@@ -613,101 +631,12 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 				setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divShowBankList");
 			}
 		}
-		LinkedList<CDirStructure> dirStructureList = new LinkedList<CDirStructure>();
 
-		for (File f : bankDirectory.listFiles()) {
-			// リカバリディレクトリには、ファイルを置けるようにして、データは更にリカバリディレクトリの下のディレクトリ中に配置するようにした。
-			if (f.isDirectory()) {
-				CDirStructure data = new CDirStructure(f.getAbsoluteFile(), new Date(f.lastModified()));
-				dirStructureList.add(data);
-			}
-		}
-
-		String sortingOrder = param.getSortingOrder();
-		// 一応、保険程度に。
-		if (sortingOrder == null)
-			sortingOrder = "";
-
-		Comparator<CDirStructure> comparator;
-		// この程度なので、Builder Patternとか、Strategy Patternとかは使わなくてよいだろう。
-		switch (sortingOrder) {
-		case "timeReverseOrder":
-			comparator = new Comparator<CDirStructure>() {
-				@Override
-				public int compare(CDirStructure o1, CDirStructure o2) {
-					if (o1.getFolderPath().toFile().lastModified() < o2.getFolderPath().toFile().lastModified()) {
-						return -1;
-					} else if (o1.getFolderPath().toFile().lastModified() > o2.getFolderPath().toFile()
-							.lastModified()) {
-						return 1;
-					} else {
-						return 0;
-					}
-				}
-			};
-			break;
-		case "timeOrder":
-			comparator = new Comparator<CDirStructure>() {
-				@Override
-				public int compare(CDirStructure o1, CDirStructure o2) {
-					if (o1.getFolderPath().toFile().lastModified() > o2.getFolderPath().toFile().lastModified()) {
-						return -1;
-					} else if (o1.getFolderPath().toFile().lastModified() < o2.getFolderPath().toFile()
-							.lastModified()) {
-						return 1;
-					} else {
-						return 0;
-					}
-				}
-			};
-			break;
-		case "nameReverseOrder":
-			comparator = new Comparator<CDirStructure>() {
-				@Override
-				public int compare(CDirStructure o1, CDirStructure o2) {
-					Collator col = Collator.getInstance(Locale.JAPAN);
-					return -col.compare(o1.getFolderPath().toFile().getName(), o2.getFolderPath().toFile().getName());
-				}
-			};
-			break;
-		case "nameOrder":
-		default:
-			comparator = new Comparator<CDirStructure>() {
-				@Override
-				public int compare(CDirStructure o1, CDirStructure o2) {
-					Collator col = Collator.getInstance(Locale.JAPAN);
-					return col.compare(o1.getFolderPath().toFile().getName(), o2.getFolderPath().toFile().getName());
-				}
-			};
-			break;
-		}
-
-		Collections.sort(dirStructureList, comparator);
-
-		// リスト表示の対象となる部分を抽出する。
-		if (param.getStartFrom() != 1 && param.getStartFrom() > dirStructureList.size()) {
-			// 指定された開始位置がリストの最長より大きいときハッキングか？
-			errorMessageList.add("リスト表示開始位置の指示が異常です。");
-			setAllParameters4Mav(mav, errorMessageList, param.getBranchDirName(), fs, "", prop,
-					"pages/divShowBankList");
-			return mav;
-		}
-
-		int startFrom = param.getStartFrom() == 0 ? 0 : param.getStartFrom() - 1; // LinkedListは0オリジン。
-		int listUntil = startFrom + prop.getListStepSize();
-		if (listUntil >= dirStructureList.size())
-			listUntil = dirStructureList.size();
-
-		LinkedList<Integer> targetPosList = new LinkedList<Integer>();
-		for (int briefStop = 0; briefStop < dirStructureList.size(); briefStop += prop.getListStepSize())
-			targetPosList.add(briefStop + 1);
-		dirStructureList = new LinkedList<CDirStructure>(dirStructureList.subList(startFrom, listUntil));
+		LinkedList<CBankEntry> dirStructureList = createBankDirStructureList();
 
 		setAllParameters4Mav(mav, errorMessageList, param.getBranchDirName(), fs, "", prop, "pages/divShowBankList");
-		// このメソッドで特有となる各データを更に記録。
-		mav.addObject("presentPos", param.getStartFrom());
-		mav.addObject("targetPosList", targetPosList);
-		mav.addObject("dirStructureList", dirStructureList);
+		mav = createContentsList(mav, param.getStartFrom(), param.getSortingOrder(), dirStructureList,
+				errorMessageList);
 		return mav;
 	}
 
@@ -851,7 +780,7 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 			try {
 				String inAbsoluteName = "c:\\Temp\\" + inFiles[index].getName();
 				inFilesList.add(inAbsoluteName);
-				CImageEntry ie = fs.addNewFile(prop.getMyCallSign(), params.getDescription2Change());
+				CImageEntry ie = fs.addNewPictFile(prop.getMyCallSign(), params.getDescription2Change());
 
 				String targetDirName = prop.getStrPhotoDirectoryPath();
 
@@ -1266,8 +1195,6 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		}
 	}
 
-
-
 	/**
 	 * QSOLOG内、branchNameHolderファイル中に、移動させるディレクトリの名称を記録する。branchNameHolderファイルには、現在表「画像処理」面に
 	 * 表示されているメモリバンク名のみが記録されている。
@@ -1293,6 +1220,11 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 			e.printStackTrace();
 		}
 		return;
+	}
+
+	@Override
+	protected LinkedList<CImageEntry> createResultContentsListSeed() {
+		return new LinkedList<CImageEntry>();
 	}
 
 }

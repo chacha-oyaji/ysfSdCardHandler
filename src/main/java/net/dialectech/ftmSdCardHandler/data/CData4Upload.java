@@ -76,12 +76,18 @@ public class CData4Upload extends CDltSimpleFileHandler {
 	private String strQRCode;
 	@Getter
 	@Setter
+	private String destination;
+	@Getter
+	@Setter
 	private int imageSize;
 	@Getter
 	@Setter
 	private String errorCorrectionLevel;
-
-	// 以下はshowBankListリクエストにおいて使用される。
+	@Getter
+	@Setter
+	private String message;
+	
+	// 以下はListリクエストにおいて使用される。
 	@Getter
 	@Setter
 	private int startFrom;

@@ -18,9 +18,10 @@ import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.servlet.ModelAndView;
 
 import jakarta.servlet.http.HttpSession;
+import net.dialectech.ftmSdCardHandler.actions.suppoters.CHandlerActionFundamental;
 import net.dialectech.ftmSdCardHandler.data.CData4Upload;
+import net.dialectech.ftmSdCardHandler.data.CMessageEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
-import net.dialectech.ftmSdCardHandler.supporters.CHandlerActionFundamental;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 
@@ -28,7 +29,6 @@ import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
 @RequestScope
 @RequestMapping("/execute/messages")
 public class CHandlerMessagesAction extends CHandlerActionFundamental {
-
 
 	/**
 	 * actDataMountAndLoadPresentMessages()は"mountAndLoadPresentMessages"リクエストによってキックされるが、
@@ -81,7 +81,7 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 		if (errorMsg != null) {
 			errorMessageList.add(errorMsg);
 			errorMessageList.add("SD-CARDの構成が不完全です。");
-			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divImages");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "ERROR", prop, "pages/divMessages");
 			return mav;
 		}
 
@@ -112,10 +112,147 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 
 		fs.setMounted(true);
 		// 現時点でのSD-CARD上の画像情報はFileSystem:fsにあるから、そのままThymeleafに渡す。
-		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop,
-				"pages/divMessages");
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(), fs.getMsgDirList(),
+				errorMessageList);
+		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divMessages");
 		return mav;
 	}
 
-	
+	@RequestMapping(value = "showMessageList", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataShowVoiceList(@ModelAttribute CData4Upload param, HttpSession session,
+			ModelAndView mav) {
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
+
+		LinkedList<CMessageEntry> messageList = new LinkedList<CMessageEntry>();
+
+		// 元データ”fs.getVoiceDirList()”はソートしたくないので、ここでリストを再作成する。
+		if (fs.getMsgDirList() != null)
+			for (CMessageEntry f : fs.getMsgDirList()) {
+				messageList.add(f);
+			}
+
+		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divMessages");
+		mav = createContentsList(mav, param.getStartFrom(), param.getSortingOrder(), messageList, errorMessageList);
+
+		return mav;
+	}
+
+	@RequestMapping(value = "deleteMessageCompletely", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataDeleteMessageCompletely(@ModelAttribute CData4Upload params, HttpSession session,
+			ModelAndView mav) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		for (CMessageEntry messageData : fs.getMsgDirList()) {
+			if (params.getTargetDataId() == messageData.getDataId()) {
+				fs.deleteMessageEntry(messageData);
+				break;
+			}
+		}
+
+		fs.saveAllOfFilesOnMessage(errorMessageList);
+		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divMessages");
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(), fs.getMsgDirList(),
+				errorMessageList);
+
+		return mav;
+	}
+
+	@RequestMapping(value = "deleteMessageMarking", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataDeleteMessageMarking(@ModelAttribute CData4Upload params, HttpSession session,
+			ModelAndView mav) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		LinkedList<CMessageEntry> vdl = fs.getMsgDirList();
+		for (CMessageEntry messageData : fs.getMsgDirList()) {
+			if (params.getTargetDataId() == messageData.getDataId()) {
+				messageData.setActive(false);
+			}
+		}
+
+		fs.saveAllOfFilesOnMessage(errorMessageList);
+
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(), fs.getMsgDirList(),
+				errorMessageList);
+		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divMessages");
+
+		return mav;
+	}
+
+	@RequestMapping(value = "recoverMessageMarking", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataRecoverMessageMarking(@ModelAttribute CData4Upload params, HttpSession session,
+			ModelAndView mav) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		LinkedList<CMessageEntry> vdl = fs.getMsgDirList();
+		for (CMessageEntry messageData : fs.getMsgDirList()) {
+			if (params.getTargetDataId() == messageData.getDataId()) {
+				messageData.setActive(true);
+			}
+		}
+
+		fs.saveAllOfFilesOnMessage(errorMessageList);
+
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(), fs.getMsgDirList(),
+				errorMessageList);
+		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divMessages");
+
+		return mav;
+	}
+
+	@RequestMapping(value = "createMessage2Send", method = { RequestMethod.POST, RequestMethod.GET })
+	public ModelAndView actDataCreateMessage2Send(@ModelAttribute CData4Upload params, HttpSession session,
+			ModelAndView mav) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+		CYsfFileSystem fs = CYsfFileSystem.getInstance();
+		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		boolean foundError = false;
+		if (params.getDestination().isBlank()) {
+			errorMessageList.add("リスト上への表示欄が空白です。１０文字以内の文字列が必要です。");
+			foundError = true;
+		}
+		if (params.getMessage().isBlank()) {
+			errorMessageList.add("メッセージが空白です。５０文字以内の文字列が必要です。");
+			foundError = true;
+		}
+		if (foundError) {
+			errorMessageList.add("上記のエラーのため、メッセージの書き込みをしませんでした。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divMessages");
+			mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(), fs.getMsgDirList(),
+					errorMessageList);
+			return mav;
+		}
+		int newId = fs.getMsgDirList().size() + 1;
+		CMessageEntry newMessage = new CMessageEntry(prop.getRadioId(), params.getDestination(), prop.getMyCallSign(),
+				prop.getRadioId(), params.getMessage(), newId);
+
+		fs.addMessageEntry(newMessage);
+		fs.saveAllOfFilesOnMessage(errorMessageList);
+
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(), fs.getMsgDirList(),
+				errorMessageList);
+		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divMessages");
+
+		return mav;
+	}
+
+	@Override
+	protected LinkedList<CMessageEntry> createResultContentsListSeed() {
+		return new LinkedList<CMessageEntry>();
+	}
+
 }

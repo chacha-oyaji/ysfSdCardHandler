@@ -23,11 +23,15 @@ import com.google.zxing.common.HybridBinarizer;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.dialectech.ftmSdCardHandler.data.CImageEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltImageIO;
 
+/**
+ * CYsfFileSystemCorePartはSD-CARDのアクセスをするファイルシステムの基礎クラスであるとともに、各ＢＡＮＫを把握/管理するときにも用いるクラス
+ */
 public class CYsfFileSystemCorePart {
 
 	protected CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
@@ -38,17 +42,17 @@ public class CYsfFileSystemCorePart {
 	// PICT関連のデータ列
 	@Getter
 	@Setter
-	protected LinkedList<CImageEntry> pctDirListWithDisplayOrder;
+	protected LinkedList<CImageEntry> pctDirList;	// 画像のDIR情報を記録順で保持する記録リンク
 	@Getter
 	@Setter
-	protected LinkedList<CImageEntry> pctDirList;
-	File photoFolder = null;
+	protected LinkedList<CImageEntry> pctDirListWithDisplayOrder;	// 画像データを画像処理プレーンに表示する順にDIR情報を記録するリンク
+	File photoFolder = null;	// 画像（JPG）ファイルを記録するフォルダを記録する部分
 	@Setter
 	@Getter
-	protected int presentMaxNumberInPictFileName = 0;
+	protected int presentMaxNumberInPictFileName = 0;	// 画像データのファイル名のうち数値部分の最大値。
 	@Getter
 	@Setter
-	File[] includedFileList;
+	File[] includedFileList;	// 画像（JPG）フォルダに記録されている画像ファイルを記録するFile配列
 
 	public CYsfFileSystemCorePart() {
 		super();
@@ -64,14 +68,12 @@ public class CYsfFileSystemCorePart {
 		try (FileInputStream fileInputStream = new FileInputStream(partBim);) {
 			CDltImageIO imageHandler = CDltImageIO.getInstance();
 			image = imageHandler.readInputStream2BufferedImage(fileInputStream);
-			// image = ImageIO.read(sourceFile[0]);
 			LuminanceSource source = new BufferedImageLuminanceSource(image);
 			BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
 			Reader reader = new MultiFormatReader();
 			Result decodeResult = reader.decode(bitmap);
 			context = decodeResult.getText();
 		} catch (FormatException | IOException | NotFoundException | ChecksumException | CDltFlowsException e) {
-			// e.printStackTrace();
 			return null;
 		}
 		return context;

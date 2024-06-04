@@ -44,6 +44,7 @@ public class CConst {
 	public static final String PhotoFoldername = "PHOTO";
 	public static final String QsoLogFolderName = "QSOLOG";
 	public static final String VoiceFoldername = "VOICE";
+	public static final int MAX_MESSAGE_BYTES_PER_PACKET = 80 ;	// １メッセージあたりの最大バイト数は80(=0x50)
 	
 	public static LinkedHashMap<String, String> defaultPositionOfSuperImposeMap = new LinkedHashMap<String, String>();
 	public static LinkedHashMap<String, String> defaultColorSelectionMap = new LinkedHashMap<String, String>();

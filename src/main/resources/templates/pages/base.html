@@ -96,6 +96,12 @@ td.nrmBase {
 			minHeight : 300
 		});
 		executeLiteralCount('taQRInfo','dvTotalByteOfQRString');
+		$("#dlgCreateSendMessage").dialog({
+			autoOpen : false,
+			minWidth : 500,
+			minHeight : 300
+		});		
+		executeLiteralCount('taMessage2Send','dvTotalByteOfMessage2Send');
 	});
 
 	function resetByDetailMode() {
@@ -247,48 +253,7 @@ td.nrmBase {
 		submitAndStore2Target("frmMove2MemoryAndCompleteClearAllImages",
 				"divImageGallery");
 	}
-
-	function submitShowBankContents(targetDirName) {
-		$(".cBranchDirName").val(targetDirName);
-		submitAndStore2Target("frmshowBankDirContents", "divImageListOfBank");
-		$("#divImageListOfBank").show();
-		$("#divRenameBankOperator").hide();
-	}
-
-	function submitRecallDirContents(targetDirName) {
-		$(".cBranchDirName").val(targetDirName);
-		submitAndStore2Target("frmRecallDirContents", "divImageGallery",
-				"tabMain", 0);
-	}
-
-	function showReNameplain(targetDirName) {
-		$("#divImageListOfBank").hide();
-		$("#divRenameBankOperator").show();
-		$(".cRenameBranchDirName").val(targetDirName);
-	}
-
-	function submitRenameDir() {
-		if ($("#txtNewBranchDirName").val().trim() == "") {
-			window.alert("変更後の名称が空白になっています。\n「変更後の名称」は、空白以外の文字列を指定してください。");
-			return;
-		}
-		if ($("#txtNewBranchDirName").val().trim() == $(
-				"#txtPresentBranchDirName").val()) {
-			window.alert("変更前と変更後の名称が同じです。\n変更処理は行いません。");
-			return;
-		}
-		submitAndStore2Target("frmRenameOneOfBankDir", "divImageListOfBank");
-	}
-
-	function deleteThisBank(dirName2Delete) {
-		if (window.confirm("「" + dirName2Delete
-				+ "」を削除します。\n復活処理はありません。よろしいですか？")) {
-			$(".cBranchDirName").val(dirName2Delete);
-			submitAndStore2Target("frmDeleteThisBankDir", "divImageListOfBank");
-		}
-		console.log("NO!!!");
-	}
-
+	
 	// QRコード入力欄に入力済みの文字列の文字数の表示
 	function executeLiteralCount(sourceId,targetId) {
 		if ($('#' + sourceId).val() == null)
@@ -297,13 +262,13 @@ td.nrmBase {
 			$('#' + targetId).text($('#' + sourceId).val().length + " 文字");
 	}
 
-	function executeDescriptionCount(sourceId,targetId) {
+	function executeDescriptionCount(sourceId,targetId,literalLimit) {
 		if ($('#' + sourceId).val() == null)
 			$('#'+ targetId).text(0);
 		else {
 			var lengthOfDescription = $('#' + sourceId).val().length;
-			if (lengthOfDescription > 11)
-				lengthOfDescription = "<font color='red'>11文字を越える文字は無視されます。</font>" +　lengthOfDescription ;
+			if (lengthOfDescription > literalLimit)
+				lengthOfDescription = "<font color='red'>" + literalLimit + "文字を越える文字は無視されます。</font>" +　lengthOfDescription ;
 			$('#'+ targetId).html(lengthOfDescription　+　"文字");
 		}
 	}
@@ -330,72 +295,147 @@ td.nrmBase {
 	}
 	
 	/*
-		MOUNTの処理は、画像、MESSAGE、VOICEそれぞれをキックする。これは、一回のMOUNT操作によっても表示すべき
+		MOUNTの処理は、画像、MESSAGE、VOICEそれぞれのMOUNTをキックする。これは、一回のMOUNT操作によっても表示すべき
 		事項（画像リスト、MESSAGE-LIST、VOICE-LIST）を表示するところが別々なので、これらの取得のためのリクエスト
 		を個々に送る必要があるからである。なお、MESSAGE、VOICEのMOUNTリクエストにおいては、予めMOUNTされている
 		ことを前提としており、ＭＯＵＮＴされていなければ１０秒待ち、それでもＭＯＵＮＴされないときに、はじめてＭＯＵＮＴする
 		ようになっている。
 	*/
 	function processMount(){
-		$('#dlgDetailDialog').dialog('close');
+		$("#dlgDetailDialog").dialog("close");
 		submitAndStore2Target('frmLoadSDCard4Pict','divImageGallery');
-		submitAndStore2Target('frmLoadSDCard4Msg','divMessageGallery');
-		submitAndStore2Target('frmLoadSDCard4Voice','dvVoiceList');
+		
+		$(".cSortingOrderOnMessageList").val($("#slSortingOrderOnMessage").prop("value"));
+		$(".cStartFromOnMessageList").val(1);
+		submitAndStore2Target("frmLoadSDCard4Msg","divMessageList");
+		
+		$(".cSortingOrderOnVoiceList").val($("#slSortingOrderOnVoice").prop("value"));
+		$(".cStartFromOnVoiceList").val(1);
+		submitAndStore2Target("frmLoadSDCard4Voice","dvVoiceList");
+		
+		
 	}
+
+	/*
+	***************************************************************************************************************
+	BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　BANK　　
+	***************************************************************************************************************
+	*/
+
+	function submitShowBankContents(targetDirName,startFrom) {
+		$(".cBranchDirName").val(targetDirName);
+		$(".cStartFromOnImageBank").val(startFrom);
+		$(".cSortingOrderOnImageBank").val($("#slSortingOrderOnImageBank").prop("value"));
+		submitAndStore2Target("frmshowBankDirContents", "divImageListOfBank");
+		$("#divImageListOfBank").show();
+		$("#divRenameBankOperator").hide();
+	}
+
+	function recallBankContents2SdCard(targetDirName) {
+		$(".cBranchDirName").val(targetDirName);
+		submitAndStore2Target("frmRecallDirContents", "divImageGallery",
+				"tabMain", 0);
+	}
+
+	/*
+	* バンクの名称変更を操作パネルを表示させる。併せて、操作パネルにリスト表示先頭IDと変更前のバンク名を設定する。	
+	*/
+	function showReNameBankPlane(targetDirName,startFrom) {
+		$("#divImageListOfBank").hide();
+		$("#divRenameBankOperator").show();
+		$(".cRenameBranchDirName").val(targetDirName);
+		$(".cStartFromOnImageBank").val(startFrom);
+		$(".cSortingOrderOnImageBank").val($("#slSortingOrderOnImageBank").prop("value"));
+	}
+
+	/*
+	* バンクの名称変更リクエストをPCに送信する。	
+	*/
+	function executeRequestRenameBankDir(startFrom) {
+		if ($("#txtNewBranchDirName").val().trim() == "") {
+			window.alert("変更後の名称が空白になっています。\n「変更後の名称」は、空白以外の文字列を指定してください。");
+			return;
+		}
+		if ($("#txtNewBranchDirName").val().trim() == $(
+				"#txtPresentBranchDirName").val()) {
+			window.alert("変更前と変更後の名称が同じです。\n変更処理は行いません。");
+			return;
+		}
+		$(".cStartFromOnImageBank").val(startFrom);
+		$(".cSortingOrderOnImageBank").val($("#slSortingOrderOnImageBank").prop("value"));
+		submitAndStore2Target("frmRenameOneOfBankDir", "divDirectoryList4Bank");
+	}
+
+	function deleteThisBank(dirName2Delete,startFrom) {
+		if (window.confirm("「" + dirName2Delete
+				+ "」を削除します。\n復活処理はありません。よろしいですか？")) {
+			$(".cBranchDirName").val(dirName2Delete);
+			$(".cStartFromOnImageBank").val(startFrom);
+			$(".cSortingOrderOnImageBank").val($("#slSortingOrderOnImageBank").prop("value"));
+			submitAndStore2Target("frmDeleteThisBankDir", "divDirectoryList4Bank");
+		}
+		console.log("NO!!!");
+	}
+
+	function showBankList(startFrom) {
+		$('.cBankListFrom').val(startFrom);
+		submitAndStore2Target('frmShowBankList','divDirectoryList4Bank');
+	}
+
+	/*
+	***************************************************************************************************************
+	MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES MESSAGES 　　
+	***************************************************************************************************************
+	*/
+
+	function deleteMessageMarking(dataId, presentPos) {
+		$(".cMessageDataId").val(dataId);
+		$(".cMessagePresentMessageListPos").val(presentPos);
+		$(".cMessageSortingOrder").val($('#slSortingOrderOnMessage').prop('value'));
+		submitAndStore2Target("frmDeleteMessageMarking", "divMessageList");
+	}
+
+	function deleteMessageCompletely(dataId, presentPos) {
+		if (window.confirm("＊＊＊＊＊＊＊＊＊＊＊\n本処理は復活できません。" + "\n＊＊＊＊＊＊＊＊＊＊＊"
+				+ "\n\n本音声情報を削除してよろしいですか？")) {
+			// OKの場面
+			$(".cMessageDataId").val(dataId);
+			$(".cMessagePresentMessageListPos").val(presentPos);
+			$(".cMessageSortingOrder").val(
+					$('#slSortingOrderOnMessage').prop('value'));
+			submitAndStore2Target('frmDeleteMessageCompletely', 'divMessageList');
+		}
+		return;
+	}
+
+	function recoverMessageMarking(dataId, presentPos) {
+		$(".cMessageDataId").val(dataId);
+		$(".cMessagePresentMessageListPos").val(presentPos);
+		$(".cMessageSortingOrder").val($('#slSortingOrderOnMessage').prop('value'));
+		submitAndStore2Target("frmRecoverMessageMarking", "divMessageList");
+	}
+	
+	function executeCreateMessage() {
+		var foundError = false ;
+		if ($("#txMessageDestination").val()==""){
+			$("#divTotalByteOfMessageDescription").html("<font style='color:red'>空白を指定できません。</font>");
+			foundError = true ;
+		}
+		if ($("#taMessage2Send").val()==""){
+			$("#divTotalByteOfMessage2Send").html("<font style='color:red'>空白を指定できません。</font>");
+			foundError = true ;
+		}
+		if (foundError)
+			return ;
+		$(".cMessagePresentMessageListPos").val(1);
+		$(".cMessageSortingOrder").val($('#slSortingOrderOnMessage').prop('value'));
+		submitAndStore2Target("frmCreateMessage2Send", "divMessageList");
+	}
+	
+
 </script>
 </head>
 <body>
-
-	<div id="dlgQRCodeInputDialog" title="QRコード入力" style="display: none;">
-		<form id="frmQRCodeUpload" method="post"
-			th:action="@{/execute/images/createQRCodeAndLoadPresentImages}"
-			enctype="multipart/form-data">
-			<h2>QRコードに変換する文字列</h2>
-			<textarea id="taQRInfo" name="strQRCode"
-				style="width: 760px; height: 8em;"
-				oninput="executeLiteralCount('taQRInfo','dvTotalByteOfQRString');"></textarea>
-			<br />
-			<div>
-				テキストの文字数：<span id="dvTotalByteOfQRString"></span>
-			</div>
-			記述(空白許容)：<input id="txtQRDescription" name="description2Change"
-				style="width: 16em;"
-				oninput="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString');">
-			<button type="button" onclick="$('#divLiteralExplain').toggle();">使用文字の説明</button>
-			<br />
-			<div id="divLiteralExplain"
-				style="display: none; background-color: #fcc;"
-				onclick="$('#divLiteralExplain').hide();">「記述」欄で使用できる文字列は、半角の英数字(0～9,a～z,A～Z)
-				、半角の特殊文字（!"#$%&\'()*+,-./）、並びに全角のカタカナに限ります。</div>
-			<div>
-				記述の文字数：<span id="dvTotalByteOfDescriptionString"></span>
-			</div>
-			<div
-				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
-				最大容量 <select id="slFileSize4QR" name="volumeTarget">
-					<option th:each="elem : ${prop.maxSizeOfImageMap}"
-						th:selected=" ${elem.key == prop.maxSizeOfImage}"
-						th:value="${elem.key}" th:text="${elem.value}">
-				</select> <select name="imageSize">
-					<option value="160">160×120</option>
-					<option value="320" selected>320×240</option>
-				</select>誤り訂正レベル<select name="errorCorrectionLevel">
-					<option value="H">強 (30%までの訂正能力)</option>
-					<option value="Q" selected>中強(25%までの訂正能力)</option>
-					<option value="M">中 (15%までの訂正能力)</option>
-					<option value="L">弱 (7%までの訂正能力)</option>
-				</select>
-			</div>
-			<div
-				style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
-				<button type="button"
-					onclick="$('#taQRInfo').val('');executeLiteralCount('taQRInfo','dvTotalByteOfQRString');">電文削除</button>
-				<button type="button"
-					onclick="executeCreateQRCodeAndLoadPresentImages() ;">Convert
-					and Upload</button>
-			</div>
-		</form>
-	</div>
 
 	<div id="Container">
 		<div style="width: 100%; margin: 0 auto;">
@@ -417,15 +457,77 @@ td.nrmBase {
 						<li><a href="#tab5">対象設定</a></li>
 					</ul>
 					<div id="tab1">
+						<!--/* ************************************************************************** */-->
+						<!--/*  PICTURE PICTURE PICTURE PICTURE PICTURE PICTURE PICTURE PICTURE PICTURE   */-->
+						<!--/* ************************************************************************** */-->
+						<!--/* 
+							*****************************************************************************
+									最初に、jQuery-UIで実装する、ダイアログボックスをおく
+									（１）　QRコード入力
+							*****************************************************************************
+						*/-->
+
+						<div id="dlgQRCodeInputDialog" title="QRコード入力ダイアログ"
+							style="display: none;">
+							<form id="frmQRCodeUpload" method="post"
+								th:action="@{/execute/images/createQRCodeAndLoadPresentImages}"
+								enctype="multipart/form-data">
+								<h2>QRコードに変換する文字列</h2>
+								<textarea id="taQRInfo" name="strQRCode"
+									style="width: 760px; height: 8em;"
+									oninput="executeLiteralCount('taQRInfo','dvTotalByteOfQRString');"></textarea>
+								<br />
+								<div>
+									テキストの文字数：<span id="dvTotalByteOfQRString"></span>
+								</div>
+								記述(空白許容)：<input id="txtQRDescription" name="description2Change"
+									style="width: 16em;"
+									oninput="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString',11);">
+								<button type="button"
+									onclick="$('#divLiteralExplain').toggle();">使用文字の説明</button>
+								<br />
+								<div id="divLiteralExplain"
+									style="display: none; background-color: #fcc;"
+									onclick="$('#divLiteralExplain').hide();">「記述」欄で使用できる文字列は、半角の英数字(0～9,a～z,A～Z)
+									、半角の特殊文字（!"#$%&\'()*+,-./）、並びに全角のカタカナに限ります。</div>
+								<div>
+									記述の文字数：<span id="dvTotalByteOfDescriptionString"></span>
+								</div>
+								<div
+									style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
+									最大容量 <select id="slFileSize4QR" name="volumeTarget">
+										<option th:each="elem : ${prop.maxSizeOfImageMap}"
+											th:selected=" ${elem.key == prop.maxSizeOfImage}"
+											th:value="${elem.key}" th:text="${elem.value}">
+									</select> <select name="imageSize">
+										<option value="160">160×120</option>
+										<option value="320" selected>320×240</option>
+									</select>誤り訂正レベル<select name="errorCorrectionLevel">
+										<option value="H">強 (30%までの訂正能力)</option>
+										<option value="Q" selected>中強(25%までの訂正能力)</option>
+										<option value="M">中 (15%までの訂正能力)</option>
+										<option value="L">弱 (7%までの訂正能力)</option>
+									</select>
+								</div>
+								<div
+									style="padding: 5px; float: left; margin: 5px; background-color: #fdd; border: solid 4px #faa;">
+									<button type="button"
+										onclick="$('#taQRInfo').val('');executeLiteralCount('taQRInfo','dvTotalByteOfQRString');">電文削除</button>
+									<button type="button"
+										onclick="executeCreateQRCodeAndLoadPresentImages() ;">Convert
+										and Upload</button>
+								</div>
+							</form>
+						</div>
+						<!--/* ================================== 「画像処理」タブでの表示の実体　============================================ */-->
 						<div
 							style="display: flex; width: 100%; justify-content: center; align-items: center;">
-
 							<div>
 								<button id="btnMountAndLoad" onclick="processMount();"
 									style="margin-right: 10px;">MOUNT</button>
 								<br />
 								<button id="btnOpenQRCodeInputDialog"
-									onclick="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString');$('#dlgQRCodeInputDialog').dialog('open');"
+									onclick="executeDescriptionCount('txtQRDescription','dvTotalByteOfDescriptionString',11);$('#dlgQRCodeInputDialog').dialog('open');"
 									style="margin-right: 10px;">QR入力</button>
 							</div>
 							<div
@@ -517,6 +619,7 @@ td.nrmBase {
 						<div id="divImageGallery" style=""></div>
 					</div>
 					<div id="tab2">
+						<!--/* ================================== 「BANK処理」タブでの表示の実体　============================================ */-->
 						<!--/* ************************************************************************** */-->
 						<!--/*                                   BANK                                     */-->
 						<!--/* ************************************************************************** */-->
@@ -526,9 +629,9 @@ td.nrmBase {
 								th:action="@{/execute/images/showBankList}"
 								enctype="multipart/form-data">
 								<button type="button" id="btnShowDirectory4Bank"
-									onclick="$('#txtBankListFrom').val(1);submitAndStore2Target('frmShowBankList','divDirectoryList4Bank');">リスト再取得</button>
-								<input type="hidden" id="txtBankListFrom" name="startFrom">
-								<select name="sortingOrder"
+									onclick="showBankList(1);">リスト再取得</button>
+								<input type="hidden" class="cBankListFrom" name="startFrom">
+								<select name="sortingOrder" id="slSortingOrderOnImageBank"
 									onchange="$('#btnShowDirectory4Bank').click();">
 									<option value="timeOrder">時間順（new -> old）</option>
 									<option value="timeReverseOrder">時間逆順（old -> new）</option>
@@ -537,62 +640,87 @@ td.nrmBase {
 								</select>
 							</form>
 						</div>
+						<hr>
 						<div id="divDirectoryList4Bank"></div>
 					</div>
 					<div id="tab3">
 						<!--/* ************************************************************************** */-->
 						<!--/*                                 MESSAGE MESSAGE                            */-->
 						<!--/* ************************************************************************** */-->
-						<!--/* ================
-							  最初に隠しformの定義 
-							================ */-->
+						<!--/* 
+							*****************************************************************************
+							（２）　送信用MESSAGE入力
+							*****************************************************************************
+						 */-->
+
+						<div id="dlgCreateSendMessage" title="送信用メッセージ入力ダイアログ"
+							style="display: none;">
+							<form id="frmCreateMessage2Send" method="post"
+								th:action="@{/execute/messages/createMessage2Send}"
+								enctype="multipart/form-data">
+								<input type="hidden" name="startFrom"
+									class="cStartFromOnMessageList"> <input type="hidden"
+									name="sortingOrder" class="cSortingOrderOnMessageList">
+								<h3>リスト上への表示</h3>
+								<input type="text" id="txMessageDestination"
+									name="destination" style="width: 20em;"
+									oninput="executeDescriptionCount('txMessageDestination','divTotalByteOfMessageDescription',10);">
+								<div>
+									リストへの表示文字数：<span id="divTotalByteOfMessageDescription"></span>
+								</div>
+								<h3>メッセージ</h3>
+								<textarea id="taMessage2Send" name="message"
+									style="width: 20em; height: 8em;"
+									oninput="executeDescriptionCount('taMessage2Send','divTotalByteOfMessage2Send',50);"></textarea>
+								<br />
+								<div>
+									テキストの文字数：<span id="divTotalByteOfMessage2Send"></span>
+								</div>
+								<br /> <input type="button"
+									onclick="$('#txMessageDestination').val('');$('#taMessage2Send').val('');executeLiteralCount('txMessageDestination','divTotalByteOfMessageDescription');executeLiteralCount('taMessage2Send','dvTotalByteOfMessage2Send');"
+									value="初期化"> <input type="button"
+									onclick="executeCreateMessage();" value="追加登録">
+							</form>
+						</div>
+						<!--/* ====================================
+							   「MESSAGE処理」用の隠しformの定義 
+							　　==================================== */-->
 						<form id="frmLoadSDCard4Msg" method="post"
 							th:action="@{/execute/messages/mountAndLoadPresentMessages}"
-							enctype="multipart/form-data"></form>
-						<div style="clear: both;" id="tabMessage">
-							<ul>
-								<li><a href="#tabMessage1">既受信MESSAGE処理</a></li>
-								<li><a href="#tabMessage2">新規MESSAGE書込処理</a></li>
-							</ul>
-							<div id="tabMessage1">
-								<button type="button"
-									style="float: left; height: 2em; vertical-align: middle;"
-									onclick="processMount();">MOUNT</button>
-								<div style="float: left; vertical-align: middle;">
-									<form id="frmShowMessageList" method="post"
-										th:action="@{/execute/messages/showMessageList}"
-										enctype="multipart/form-data">
-										<input type="hidden" id="txtMessageListFrom" name="startFrom">
-										<button type="button" id="btnShowMessageList"
-											style="height: 2em;"
-											onclick="$('#txtMessageListFrom').val(1);submitAndStore2Target('frmShowMessageList','divMessageGallery');">リスト再取得</button>
-										<select name="sortingOrder" style="height: 2em;"
-											onchange="$('#btnShowMessageList').click();">
-											<option value="timeOrder" selected>時間順（new -> old）</option>
-											<option value="timeReverseOrder">時間逆順（old -> new）</option>
-											<option value="nameOrder">名称順</option>
-											<option value="nameReverseOrder">名称逆順</option>
-										</select>
-									</form>
-								</div>
-								<br style="clear: both;" />
-								<hr>
-								<div id="divMessageGallery"></div>
-							</div>
-							<div id="tabMessage2">
-								<div style="">
-									<div>
-										<textarea id="txtMessage2Send"></textarea>
-										<button type="button" onclick="">記録</button>
-										<button type="button"
-											onclick="submitAndStore2Target('frmTest','divMessageGallery');">test</button>
-										<form id="frmTest" method="post" enctype="multipart/form-data"
-											action="testA"></form>
-									</div>
-								</div>
-								<br style="clear: both;" />
-							</div>
+							enctype="multipart/form-data">
+							<input type="hidden" name="startFrom"
+								class="cStartFromOnMessageList"> <input type="hidden"
+								name="sortingOrder" class="cSortingOrderOnMessageList">
+						</form>
+						<!--/* ================================== 「MESSAGE処理」タブでの表示の実体　============================================ */-->
+
+						<button type="button"
+							style="float: left; height: 2em; vertical-align: middle;"
+							onclick="processMount();">MOUNT</button>
+						<button id="btnOpenMessage2SendDialog"
+							onclick="executeLiteralCount('taMessage2Send','dvTotalByteOfMessage2Send');$('#dlgCreateSendMessage').dialog('open');"
+							style="margin-right: 10px; float: left; height: 2em; vertical-align: middle;">送信メッセージ作成</button>
+						<div style="float: left; vertical-align: middle;">
+							<form id="frmShowMessageList" method="post"
+								th:action="@{/execute/messages/showMessageList}"
+								enctype="multipart/form-data">
+								<input type="hidden" id="txtMessageListFrom" name="startFrom">
+								<button type="button" id="btnShowMessageList"
+									style="height: 2em;"
+									onclick="$('#txtMessageListFrom').val(1);submitAndStore2Target('frmShowMessageList','divMessageList');">リスト再取得</button>
+								<select name="sortingOrder" style="height: 2em;"
+									id="slSortingOrderOnMessage"
+									onchange="$('#btnShowMessageList').click();">
+									<option value="timeOrder" selected>時間順（new -> old）</option>
+									<option value="timeReverseOrder">時間逆順（old -> new）</option>
+									<option value="nameOrder">名称順</option>
+									<option value="nameReverseOrder">名称逆順</option>
+								</select>
+							</form>
 						</div>
+						<br style="clear: both;" />
+						<hr>
+						<div id="divMessageList"></div>
 
 					</div>
 					<div id="tab4">
@@ -605,16 +733,15 @@ td.nrmBase {
 						<form id="frmLoadSDCard4Voice" method="post"
 							th:action="@{/execute/voices/mountAndLoadPresentVoices}"
 							enctype="multipart/form-data">
-							<input type="hidden" id="txtVoiceListOrderOnMount"
+							<input type="hidden" class="cSortingOrderOnVoiceList"
 								name="sortingOrder"> <input type="hidden"
-								name="startFrom" value="1">
+								class="cStartFromOnVoiceList" name="startFrom">
 						</form>
 						<div>
-							<button type="button"
-								onclick="$('#txtVoiceListOrderOnMount').val($('#slVoiceSortingOrder').prop('value'));processMount();"
-								style="float: left; vertical-align: middle;padding:5px;">MOUNT</button>
+							<button type="button" onclick="processMount();"
+								style="float: left; vertical-align: middle; padding: 5px;">MOUNT</button>
 							<div
-								style="float: left; background-color: #44c; color: white; margin-left: 10px;margin-right: 10px;padding:5px;">
+								style="float: left; background-color: #44c; color: white; margin-left: 10px; margin-right: 10px; padding: 5px;">
 								<label style="cursor: pointer;"><input type="checkbox"
 									id="cbToggleHidePseudoDeletedOnVoice"
 									onchange="hideOrShowPseudoDeletedOnVoice();">疑似消去表示</label>
@@ -628,7 +755,7 @@ td.nrmBase {
 										style="height: 2em;"
 										onclick="$('#txtVoiceListFrom').val(1);submitAndStore2Target('frmShowVoiceList','dvVoiceList');">リスト再取得</button>
 									<select name="sortingOrder" style="height: 2em;"
-										id="slVoiceSortingOrder"
+										id="slSortingOrderOnVoice"
 										onchange="$('#btnShowVoiceList').click();">
 										<option value="timeOrder" selected>時間順（new -> old）</option>
 										<option value="timeReverseOrder">時間逆順（old -> new）</option>

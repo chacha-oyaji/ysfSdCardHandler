@@ -15,11 +15,13 @@
 		</th:block>
 		<div th:each="startP : ${targetPosList}" th:text="${startP}"
 			th:style="|font-size:1.5em;float: left; margin: 5px;border:solid 1px #444;border-radius: 5px;cursor:pointer;${startP==presentPos?'background-color:#fcc;color:red':''}|"
-			th:onclick="$('#txtBankListFrom').val([[${startP}]]);submitAndStore2Target('frmShowBankList','divDirectoryList4Bank');"></div>
+			th:onclick="showBankList([[${startP}]]);"></div>
 		<br style="clear: both;">
 		<form method="post" enctype="multipart/form-data"
 			id="frmshowBankDirContents"
 			th:action="@{/execute/images/showBankDirContents}">
+			<input type="hidden" name="startFrom" class="cStartFromOnImageBank">
+			<input type="hidden" name="sortingOrder" class="cSortingOrderOnImageBank">
 			<input type="hidden" name="branchDirName" class="cBranchDirName">
 		</form>
 		<form method="post" enctype="multipart/form-data"
@@ -28,7 +30,10 @@
 			<input type="hidden" name="branchDirName" class="cBranchDirName">
 		</form>
 		<form method="post" enctype="multipart/form-data"
-			id="frmDeleteThisBankDir" th:action="@{/execute/images/deleteThisBankDir}">
+			id="frmDeleteThisBankDir"
+			th:action="@{/execute/images/deleteThisBankDir}">
+			<input type="hidden" name="startFrom" class="cStartFromOnImageBank">
+			<input type="hidden" name="sortingOrder" class="cSortingOrderOnImageBank">
 			<input type="hidden" name="branchDirName" class="cBranchDirName">
 		</form>
 		<table style="width: 100%">
@@ -37,19 +42,19 @@
 				<th>作製日時</th>
 				<th>指示操作</th>
 			</tr>
-			<tr th:each="dirElement,status : ${dirStructureList}">
-				<td th:text="${dirElement.dirName}" th:onClick="submitShowBankContents([[${dirElement.dirName}]]);" style="cursor:pointer;"></td>
+			<tr th:each="dirElement,status : ${contentsList}">
+				<td th:text="${dirElement.dirName}"
+					th:onClick="submitShowBankContents([[${dirElement.dirName}]],[[${presentPos}]]);"
+					style="cursor: pointer;"></td>
 				<td
-					th:text="${#dates.format(dirElement.backupDate,'yyyy/MM/dd HH:mm')}"></td>
+					th:text="${#dates.format(dirElement.baseDate,'yyyy/MM/dd HH:mm')}"></td>
 				<td>
-					<!-- 
-				<button
-						th:onClick="submitShowBankContents([[${dirElement.dirName}]]);">内容参照</button>
-				 -->
 					<button
-						th:onClick="submitRecallDirContents([[${dirElement.dirName}]]);">SDCARDに複写</button>
-					<button th:onClick="showReNameplain([[${dirElement.dirName}]]);">名称変更</button>
-					<button th:onClick="deleteThisBank([[${dirElement.dirName}]]);">削除</button>
+						th:onClick="recallBankContents2SdCard([[${dirElement.dirName}]],[[${presentPos}]]);">SDCARDに複写</button>
+					<button
+						th:onClick="showReNameBankPlane([[${dirElement.dirName}]],[[${presentPos}]]);">名称変更</button>
+					<button
+						th:onClick="deleteThisBank([[${dirElement.dirName}]],[[${presentPos}]]);">削除</button>
 				</td>
 			</tr>
 		</table>
@@ -61,6 +66,8 @@
 		<form id="frmRenameOneOfBankDir"
 			th:action="@{/execute/images/renameOneOfBankDir}" method="post"
 			enctype="multipart/form-data">
+			<input type="hidden" class="cStartFromOnImageBank" name="startFrom">
+			<input type="hidden" class="cSortingOrderOnImageBank" name="sortingOrder">
 			<table>
 				<tr>
 					<th>変更するDIR名</th>
@@ -77,7 +84,8 @@
 				</tr>
 				<tr>
 					<th>操作</th>
-					<td><button type="button" onclick="submitRenameDir();">名称変更実行</button></td>
+					<td><button type="button"
+							th:onclick="executeRequestRenameBankDir([[${presentPos}]]);">名称変更実行</button></td>
 				</tr>
 			</table>
 		</form>

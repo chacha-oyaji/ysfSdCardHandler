@@ -1,4 +1,4 @@
-package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
+package net.dialectech.ftmSdCardHandler.data;
 
 import java.util.Date;
 import java.util.LinkedList;
@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.*;
 import lombok.Getter;
 import lombok.Setter;
+import net.dialectech.ftmSdCardHandler.data.supporters.CDataEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
 
@@ -86,6 +87,7 @@ public class CImageEntry extends CDataEntry {
 	 */
 	public CImageEntry(byte[] source, int index) {
 		super() ;
+		CYsfCodeConverter converter = CYsfCodeConverter.getInstance() ;
 		// まずは、自分のところに取り込む。
 		dataEntry = source;
 		sym = source[0];
@@ -95,9 +97,9 @@ public class CImageEntry extends CDataEntry {
 		byte[] nodeId = subBytes(source, 0x04, 0x08);
 		this.nodeId = new String(nodeId);
 		byte[] destination = subBytes(source, 0x09, 0x12);
-		this.destination = new String(destination);
+		this.destination = converter.ysfByte2Utf8(destination);
 		byte[] myCallSign = subBytes(source, 0x1e, 0x27);
-		this.myCallSign = new String(myCallSign);
+		this.myCallSign = converter.ysfByte2Utf8(myCallSign);
 		byte[] date = subBytes(source, 0x2e, 0x33);
 		this.date2Send = dateFromYaesuExp(date);
 		date = subBytes(source, 0x34, 0x39);
@@ -232,6 +234,17 @@ public class CImageEntry extends CDataEntry {
 		}
 
 		return numberPartOfFileName;
+	}
+
+	@Override
+	public String getRepresentativesName() {
+		return getFileCoreName();
+	}
+
+	@Override
+	public Date getRepresentativeTime() {
+		// TODO 自動生成されたメソッド・スタブ
+		return this.date2Send;
 	}
 
 }

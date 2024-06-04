@@ -6,33 +6,141 @@
 	$().ready(function() {
 
 	});
+
+	function htmlTextOfDate(date) {
+		const year = date.substring(0,4);
+		const month =date.substring(5,7); 
+		const day = date.substring(8,10);
+		const hour = date.substring(11,13);
+		const minute = date.substring(14,16);
+		const second = date.substring(17,19);
+		const formattedDate = `${year}/${month}/${day} ${hour}:${minute}:${second}`;
+		return formattedDate;
+	}
+
+	function showDetailOfThisMessage(entity) {
+		$("#divMessageDetailPlane").show();
+		$("#divDestinationOfSpecifiedMessage").text(entity.destination);
+		$("#divSentByOfSpecifiedMessage").text(entity.myCallSign);
+		$("#divTitleOfSpecifiedMessage").text(entity.description);
+		$("#divMessageOfSpecifiedMessage").html(entity.messageHtml);
+		$("#divDate2SendOfSpecifiedMessage").html(
+				htmlTextOfDate(entity.date2Send));
+	}
 </script>
+
 </head>
 <body>
+	<!--/* 
+	************************************************************************************************
+	form を一括しておいておく
+	（１）　deleteMessageMarking
+	（２）　recoverMessageMarking
+	（３）　deleteMessageCompletely
+	************************************************************************************************
+ */-->
+	<form id="frmDeleteMessageMarking" method="post"
+		th:action="@{/execute/messages/deleteMessageMarking}"
+		enctype="multipart/form-data">
+		<input type="hidden" class="cMessageDataId" name="targetDataId">
+		<input type="hidden" class="cMessageSortingOrder" name="sortingOrder">
+		<input type="hidden" class="cMessagePresentMessageListPos"
+			name="startFrom">
+	</form>
+	<form id="frmRecoverMessageMarking" method="post"
+		th:action="@{/execute/messages/recoverMessageMarking}"
+		enctype="multipart/form-data">
+		<input type="hidden" class="cMessageDataId" name="targetDataId">
+		<input type="hidden" class="cMessageSortingOrder" name="sortingOrder">
+		<input type="hidden" class="cMessagePresentMessageListPos"
+			name="startFrom">
+	</form>
+	<form id="frmDeleteMessageCompletely" method="post"
+		th:action="@{/execute/messages/deleteMessageCompletely}"
+		enctype="multipart/form-data">
+		<input type="hidden" class="cMessageDataId" name="targetDataId">
+		<input type="hidden" class="cMessageSortingOrder" name="sortingOrder">
+		<input type="hidden" class="cMessagePresentMessageListPos"
+			name="startFrom">
+	</form>
 	<th:block th:each="errorMsg,status : ${errorMessageList}">
 		<div th:text="|(${status.count}) ${errorMsg}|" style="color: red;"></div>
 	</th:block>
 	<div th:each="startP : ${targetPosList}" th:text="${startP}"
 		th:style="|font-size:1.5em;float: left; margin: 5px;border:solid 1px #444;border-radius: 5px;cursor:pointer;${startP==presentPos?'background-color:#fcc;color:red':''}|"
-		th:onclick="$('#txtMessageListFrom').val([[${startP}]]);submitAndStore2Target('frmShowMessageList','divDirectoryList4Bank');"></div>
+		th:onclick="$('#txtMessageListFrom').val([[${startP}]]);submitAndStore2Target('frmShowMessageList','divMessageList');"></div>
 	<br style="clear: both;">
-	<div style="width: 100%;">
-		<th:block th:if="${fs !=null && fs.msgDirListWithDisplayOrder !=null}">
+	<div style="max-width: 70%; float: left;">
+		<th:block th:if="${contentsList != null }">
 			<table>
-
-				<tr th:each="entity : ${fs.msgDirListWithDisplayOrder}">
-					<th th:text="${entity.dataId}"></th>
-					<td th:text="${#dates.format(entity.date2Send,'yyyy/MM/dd HH:mm')}"
-						style="text-align: left;"></td>
-					<td th:text="${entity.message}"
-						th:style="|background-color:${entity.active?'#ff8':'#888'};text-align:left;|"></td>
-
+				<tr>
+					<th>SYM</th>
+					<td>リスト表示</td>
+					<td>日時</td>
+					<td>MESSAGE</td>
+					<td>操作</td>
 				</tr>
 
+				<tr th:each="entity : ${contentsList}">
+					<th
+						th:text="|${entity.symMeaning}(${T(java.lang.Integer).toHexString(entity.sym)})|"></th>
+					<td
+						th:text="${entity.thisTransmission?entity.destination:entity.myCallSign}"
+						th:style="|background-color:${entity.backgroundDefinition}|"></td>
+					<td
+						th:text="${#dates.format(entity.date2Send,'yyyy/MM/dd HH:mm:ss')}"
+						style="text-align: left;"></td>
+					<td th:text="${entity.message}"
+						th:onclick="showDetailOfThisMessage([[${entity}]]);"
+						th:style="|background-color:${entity.active?'#ff8':'#888'};cursor: pointer;text-align:left; max-width: 10em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; |"></td>
+					<td>
+						<button th:if="${entity.active}" type="button"
+							style="background-color: pink;"
+							th:onclick="deleteMessageMarking([[${entity.dataId}]],[[${presentPos}]]);">削除扱い</button>
+						<button th:unless="${entity.active}" type="button"
+							style="background-color: #8f8;"
+							th:onclick="recoverMessageMarking([[${entity.dataId}]],[[${presentPos}]]);">復活扱い</button>
+						<button type="button" style="background-color: #f66;"
+							th:onclick="deleteMessageCompletely([[${entity.dataId}]],[[${presentPos}]]);">完全削除</button>
+					</td>
+					<!--/*
+					<th
+						th:text="|${T(java.lang.Integer).toHexString(entity.startAddressInQSOMSG)}(${entity.indexByStartAddressInQSOMessage})|"></th>
+					  */-->
+				</tr>
 			</table>
 		</th:block>
-		<div style="clear: both;"></div>
-
 	</div>
+	<div id="divMessageDetailPlane"
+		style="float: left; border: solid #888 2px; margin-left: 1em; background-color: #fee; display: none;">
+		<table style="width: 40em;">
+			<tr>
+				<th style="width: 4em;">宛先</th>
+				<td><div style="text-align: left;"
+						id="divDestinationOfSpecifiedMessage"></div></td>
+			</tr>
+			<tr>
+				<th>送信元</th>
+				<td><div style="text-align: left;"
+						id="divSentByOfSpecifiedMessage"></div></td>
+			</tr>
+			<tr>
+				<th>送信日時</th>
+				<td><div style="text-align: left;"
+						id="divDate2SendOfSpecifiedMessage"></div></td>
+			</tr>
+			<tr>
+				<th>記述</th>
+				<td><div style="text-align: left;"
+						id="divTitleOfSpecifiedMessage"></div></td>
+			</tr>
+			<tr>
+				<th>MSG</th>
+				<td><div style="text-align: left;"
+						id="divMessageOfSpecifiedMessage"></div></td>
+			</tr>
+		</table>
+	</div>
+	<br style="clear: both;">
 </body>
 </html>

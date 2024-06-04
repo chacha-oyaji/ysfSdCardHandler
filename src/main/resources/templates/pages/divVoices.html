@@ -12,7 +12,7 @@
 		$("#plyAudioPlayer")[0].play();
 	}
 
-	function changeVoiceFileName(id, formerFileName, presentPos) {
+	function showVoiceFileNameChanger(id, formerFileName, presentPos) {
 		$("#txtPresentVoiceDataId").val(id);
 		$("#txtFormerVoiceFileName").val(formerFileName);
 		$("#txtNewVoiceFileName").val(formerFileName);
@@ -121,7 +121,7 @@
 					<th>ファイル名</th>
 					<th>操作</th>
 				</tr>
-				<th:block th:each="entity : ${voiceList}">
+				<th:block th:each="entity : ${contentsList}">
 					<tr th:if="${entity.realFileExists}"
 						th:class="${entity.active?'cDivShowVoice':'cDivHideVoice'}">
 						<th th:text="${entity.dataId}"></th>
@@ -135,7 +135,7 @@
 							<button type="button"
 								th:onclick="playVoice([[@{/execute/voices/downloadVoice(targetDataId=${entity.dataId})}]]);">再生</button>
 							<button type="button"
-								th:onclick="changeVoiceFileName([[${entity.dataId}]],[[${entity.fileNameCore}]],[[${presentPos}]]);">名称変更</button>
+								th:onclick="showVoiceFileNameChanger([[${entity.dataId}]],[[${entity.fileNameCore}]],[[${presentPos}]]);">名称変更</button>
 							<button th:if="${entity.active}" type="button"
 								style="background-color: pink;"
 								th:onclick="deleteVoiceMarking([[${entity.dataId}]],[[${presentPos}]]);">削除扱い</button>

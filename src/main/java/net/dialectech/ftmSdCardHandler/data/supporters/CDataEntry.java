@@ -1,4 +1,4 @@
-package net.dialectech.ftmSdCardHandler.supporters.fileSystem;
+package net.dialectech.ftmSdCardHandler.data.supporters;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -10,7 +10,7 @@ import jakarta.xml.bind.DatatypeConverter;
 import lombok.Getter;
 import lombok.Setter;
 
-abstract class CDataEntry {
+public abstract class CDataEntry {
 	@Getter
 	@Setter
 	protected int dataId; // ～DIR/～FAT等の構造化データには入れない情報、内部のID、１オリジン
@@ -129,6 +129,7 @@ abstract class CDataEntry {
 			// 受信（既読）
 			decodedString = "solid 3px #00f";
 			break;
+		case 0x31:
 		case 0x71:
 			// 既送信（失敗）
 			decodedString = "solid 3px #880";
@@ -270,6 +271,7 @@ abstract class CDataEntry {
 			// 受信（既読）
 			decodedString = "#ccf";
 			break;
+		case 0x31:
 		case 0x71:
 			// 既送信（失敗）
 			decodedString = "#fc4";
@@ -280,6 +282,20 @@ abstract class CDataEntry {
 		}
 		return decodedString;
 	}
+
+	/**
+	 * LIST生成時、SORTINGをする際に利用する本データを代表する「名称」
+	 * 
+	 * @return
+	 */
+	abstract public String getRepresentativesName();
+
+	/**
+	 * LIST生成時、SORTINGをする際に利用する本データを代表する「時刻」
+	 * 
+	 * @return
+	 */
+	abstract public Date getRepresentativeTime();
 
 	/**
 	 * getSymMeaning()は、SYM(QSO～DIR.datの先頭バイト)の定義を文字列に変換する。<br>
@@ -347,6 +363,7 @@ abstract class CDataEntry {
 		case 0x70:
 			decodedString = "受信（既）";
 			break;
+		case 0x31:
 		case 0x71:
 			decodedString = "既送信（F）";
 			break;
@@ -357,8 +374,54 @@ abstract class CDataEntry {
 		return decodedString;
 	}
 
+	/**
+	 * isThisTransmission()は、SYM(QSO～DIR.datの先頭バイト)の定義に基づいて、
+	 * （１）　送信したもの/するものの場合にはtrueを,
+	 * （２）　受信したものの場合にはfalseを、
+	 * それぞれ返す。
+	 * 
+	 * @return
+	 */
+	public boolean isThisTransmission() {
+		boolean res;
+		switch (sym) {
+//送信側
+		case 0x00:
+		case 0x04:
+		case 0x14:
+		case 0x23:
+		case 0x63:
+		case 0x33:
+		case 0x73:
+		case 0x61:
+		case 0x71:
+			res = true;
+			break;
+
+//　受信側
+		case 0x05:
+		case 0x15:
+		case 0x22:
+		case 0x62:
+		case 0x32:
+		case 0x72:
+		case 0x60:
+		case 0x70:
+		default:
+			res = false;
+			break;
+		}
+		return res;
+	}
+
 	abstract public void storeOwnData2Buffer();
 
+	/**
+	 * 引き数となるbをBCD(Binary Coded Digital)として、これを数値表示する文字列を返す。
+	 * 
+	 * @param b
+	 * @return
+	 */
 	protected String stringFromTwoDigit(byte b) {
 		byte[] res = new byte[2];
 		byte data = (byte) (((b & 0xf0) >> 4) + 0x30);
@@ -389,5 +452,4 @@ abstract class CDataEntry {
 		}
 		return res;
 	}
-
 }
