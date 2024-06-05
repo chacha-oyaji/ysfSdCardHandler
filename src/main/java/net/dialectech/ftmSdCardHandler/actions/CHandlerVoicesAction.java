@@ -1,5 +1,6 @@
 package net.dialectech.ftmSdCardHandler.actions;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -42,6 +43,12 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
 
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
+
 		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		if (params.getDescription2Change() == null || params.getDescription2Change().equals("")) {
 			errorMessageList.add("修正後のファイル名を指定してください。");
@@ -80,7 +87,8 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(),
+				fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 		return mav;
 	}
 
@@ -90,6 +98,12 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
 
 		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		for (CVoiceEntry voiceData : fs.getVoiceDirList()) {
@@ -110,7 +124,8 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(),
+				fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 
 		return mav;
 	}
@@ -122,6 +137,12 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
 
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
+
 		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		for (CVoiceEntry voiceData : fs.getVoiceDirList()) {
 			if (params.getTargetDataId() == voiceData.getDataId()) {
@@ -131,7 +152,8 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(),
+				fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 
 		return mav;
 	}
@@ -143,6 +165,12 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
 
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
+
 		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		for (CVoiceEntry voiceData : fs.getVoiceDirList()) {
 			if (params.getTargetDataId() == voiceData.getDataId()) {
@@ -152,7 +180,8 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 
 		fs.saveAllOfFilesOnVoice(errorMessageList);
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createContentsList(mav, params.getStartFrom(),params.getSortingOrder(), fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+		mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(),
+				fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 
 		return mav;
 	}
@@ -173,6 +202,11 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		int dataId = params.getTargetDataId();
 		CVoiceEntry voiceEntry = fs.getVoiceDirList().get(dataId - 1);
 
+		if (!fs.isSdCardMounted()) {
+			springFileStream = forceStreamAsVoice("SD-MOUNT.wav");
+			return springFileStream.prepareDownload();
+		}
+
 		String fileName = prop.getSdCardBaseDirName() + CConst.VoiceFoldername + File.separator
 				+ voiceEntry.getFileName();
 		ResponseEntity<StreamingResponseBody> streamData;
@@ -184,13 +218,27 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 				streamData = springFileStream.prepareDownload();
 				return streamData;
 			} else {
-				springFileStream = forceStreamAsImage("fileNotFound.jpg");
+				springFileStream = forceStreamAsVoice("fileNotFound.wav");
 				return springFileStream.prepareDownload();
 			}
 		} catch (CDltFlowsException e) {
-			springFileStream = forceStreamAsImage("fileNotFound.jpg");
+			springFileStream = forceStreamAsVoice("fileNotFound.wav");
 			return springFileStream.prepareDownload();
 		}
+	}
+
+	private CDltSpringFileStream forceStreamAsVoice(String imageName) {
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		byte[] data;
+		try {
+			data = this.getClass().getResourceAsStream("/net/dialectech/commons/dltFlows/voice/" + imageName)
+					.readAllBytes();
+			bos.write(data);
+		} catch (IOException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
+		return springFileStream = new CDltSpringFileStream(bos, "readError.wav", "image/jpeg");
 	}
 
 	/**
@@ -299,9 +347,6 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
 			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
 			fs.clearAll();
-//			setAllParameters4Mav(mav, errorMessageList, param.getBranchDirName(), fs, "", prop,
-//					"pages/divShowBankList");
-//			return mav;
 		}
 
 		LinkedList<CVoiceEntry> voiceList = new LinkedList<CVoiceEntry>();
@@ -313,7 +358,7 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 			}
 
 		setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
-		mav = createContentsList(mav, param.getStartFrom(),param.getSortingOrder(), voiceList, errorMessageList);
+		mav = createContentsList(mav, param.getStartFrom(), param.getSortingOrder(), voiceList, errorMessageList);
 		return mav;
 	}
 

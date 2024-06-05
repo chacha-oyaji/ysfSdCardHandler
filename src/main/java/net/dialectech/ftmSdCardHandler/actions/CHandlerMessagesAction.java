@@ -152,6 +152,12 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
 
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
+
 		for (CMessageEntry messageData : fs.getMsgDirList()) {
 			if (params.getTargetDataId() == messageData.getDataId()) {
 				fs.deleteMessageEntry(messageData);
@@ -173,6 +179,12 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
 
 		LinkedList<CMessageEntry> vdl = fs.getMsgDirList();
 		for (CMessageEntry messageData : fs.getMsgDirList()) {
@@ -197,6 +209,12 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
 
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
+
 		LinkedList<CMessageEntry> vdl = fs.getMsgDirList();
 		for (CMessageEntry messageData : fs.getMsgDirList()) {
 			if (params.getTargetDataId() == messageData.getDataId()) {
@@ -219,6 +237,12 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 		CYsfFileSystem fs = CYsfFileSystem.getInstance();
 		LinkedList<String> errorMessageList = new LinkedList<String>();
+
+		if (!fs.isSdCardMounted()) {
+			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
+			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
+			fs.clearAll();
+		}
 
 		boolean foundError = false;
 		if (params.getDestination().isBlank()) {

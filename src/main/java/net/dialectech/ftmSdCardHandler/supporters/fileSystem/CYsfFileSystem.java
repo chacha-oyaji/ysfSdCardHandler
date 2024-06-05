@@ -560,16 +560,17 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 		if (messageBankChanged) {
 			int index = 0;
 			try (FileOutputStream fos4Msg = new FileOutputStream(qsoMsgContents);) {
-				if (msgDirList!=null && msgDirList.size()>0) {
+				if (msgDirList != null && msgDirList.size() > 0) {
 					for (CMessageEntry ent : msgDirList) {
 						ent.setStartAddressInQSOMessageOf(index++);
 						fos4Msg.write(ent.getBMessage());
 					}
 				}
 			} catch (Exception e) {
-				System.out.println("ERROR on Message Concerning File Manupilation (QSOMSG.dat): " + e.getLocalizedMessage());
+				System.out.println(
+						"ERROR on Message Concerning File Manupilation (QSOMSG.dat): " + e.getLocalizedMessage());
 			}
-			messageBankChanged = false ;
+			messageBankChanged = false;
 		}
 
 		try (FileOutputStream fos4Dir = new FileOutputStream(qsoMsgDir);
@@ -579,7 +580,8 @@ public class CYsfFileSystem extends CYsfFileSystemCorePart {
 			saveGeneralManager(generalMgr, qsoMgr, presentMaxNumberInMessage, presentMaxNumberInPictFileName,
 					efficientImageDirSize);
 		} catch (Exception e) {
-			// System.out.println("ERROR on Message Concerning File Manupilation(saveAllOfFilesOnMessage): " + e.getLocalizedMessage());
+			// System.out.println("ERROR on Message Concerning File
+			// Manupilation(saveAllOfFilesOnMessage): " + e.getLocalizedMessage());
 			e.printStackTrace();
 		}
 	}
