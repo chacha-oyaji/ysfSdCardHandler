@@ -44,7 +44,6 @@ import net.dialectech.ftmSdCardHandler.data.CBankEntry;
 import net.dialectech.ftmSdCardHandler.data.CData4Upload;
 import net.dialectech.ftmSdCardHandler.data.CImageEntry;
 import net.dialectech.ftmSdCardHandler.data.CVoiceEntry;
-import net.dialectech.ftmSdCardHandler.data.supporters.CDataEntry;
 import net.dialectech.ftmSdCardHandler.supporters.CConst;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
 import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
@@ -210,14 +209,15 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		File bankDirectory = new File(bankDirectoryPosition);
 		LinkedList<CBankEntry> dirStructureList = new LinkedList<CBankEntry>();
 
+		int index = 1 ;
 		for (File f : bankDirectory.listFiles()) {
 			// BANK統括ディレクトリ（リカバリディレクトリ）には、各BANKに係るフォルダが配置されるとともに、画像データはその個別フォルダに配置するようにした。
 			if (f.isDirectory()) {
 				CBankEntry data = new CBankEntry(f.getAbsoluteFile(), new Date(f.lastModified()));
+				data.setDataId(index++);
 				dirStructureList.add(data);
 			}
 		}
-
 		return dirStructureList;
 	}
 
@@ -613,6 +613,7 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 			errorMessageList.add("SD-CARDが抜かれたか、未だ挿入されたSD-CARDのMOUNT処理がされていません。");
 			errorMessageList.add("MOUNTしなければ、「画像処理」プレーンでの画像処理ができません。");
 			fs.clearAll();
+// 悩みどころではあるけれど、BANKを見るだけなら、MOUNTしてなくてもよい場合があるので、ここは処理を止めないことにする。
 //			setAllParameters4Mav(mav, errorMessageList, param.getBranchDirName(), fs, "", prop,
 //					"pages/divShowBankList");
 //			return mav;
@@ -1222,6 +1223,7 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		return;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected LinkedList<CImageEntry> createResultContentsListSeed() {
 		return new LinkedList<CImageEntry>();

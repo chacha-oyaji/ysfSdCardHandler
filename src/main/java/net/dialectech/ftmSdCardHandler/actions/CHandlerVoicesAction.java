@@ -49,7 +49,6 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 			fs.clearAll();
 		}
 
-		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		if (params.getDescription2Change() == null || params.getDescription2Change().equals("")) {
 			errorMessageList.add("修正後のファイル名を指定してください。");
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
@@ -64,10 +63,24 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		if (fs.findVoiceFile(description) != null) {
 			errorMessageList.add("指定されたファイル名「" + description + "」は既に存在します。別名を指定してください。");
 			setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
+			mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(),
+					fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
 			return mav;
 		}
-		String newName = description.replaceAll("\\.wav$", "");
-		newName = cutAndFillString(newName, 12) + ".wav";
+		String newNameCore = description.replaceAll("\\.wav$", "");
+		newNameCore = cutAndFillString(newNameCore, 12);
+		if (fs.findVoiceFile(newNameCore) != null) {
+			errorMessageList
+					.add("指定されたファイル名「" + params.getDescription2Change() + "」は、システム内で「" + newNameCore + "」に変換されます。");
+			errorMessageList.add("ファイル名「" + newNameCore + "」は既に存在します。");
+			errorMessageList.add("別名を指定してください。");
+			setAllParameters4Mav(mav, errorMessageList, "", fs, "", prop, "pages/divVoices");
+			mav = createContentsList(mav, params.getStartFrom(), params.getSortingOrder(),
+					fs.getVoiceDirListWithDisplayOrder(), errorMessageList);
+			return mav;
+		}
+		String newName = newNameCore + ".wav";
+
 		for (CVoiceEntry voiceData : fs.getVoiceDirList()) {
 			if (params.getTargetDataId() == voiceData.getDataId()) {
 				String formerFileName = prop.getStrVoiceDirectoryPath() + voiceData.getFileName();
@@ -105,7 +118,6 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 			fs.clearAll();
 		}
 
-		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		for (CVoiceEntry voiceData : fs.getVoiceDirList()) {
 			if (params.getTargetDataId() == voiceData.getDataId()) {
 				String formerFileName = prop.getStrVoiceDirectoryPath() + voiceData.getFileName();
@@ -143,7 +155,6 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 			fs.clearAll();
 		}
 
-		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		for (CVoiceEntry voiceData : fs.getVoiceDirList()) {
 			if (params.getTargetDataId() == voiceData.getDataId()) {
 				voiceData.setActive(false);
@@ -171,7 +182,6 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 			fs.clearAll();
 		}
 
-		LinkedList<CVoiceEntry> vdl = fs.getVoiceDirList();
 		for (CVoiceEntry voiceData : fs.getVoiceDirList()) {
 			if (params.getTargetDataId() == voiceData.getDataId()) {
 				voiceData.setActive(true);
@@ -362,6 +372,7 @@ public class CHandlerVoicesAction extends CHandlerActionFundamental {
 		return mav;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected LinkedList<CVoiceEntry> createResultContentsListSeed() {
 		return new LinkedList<CVoiceEntry>();

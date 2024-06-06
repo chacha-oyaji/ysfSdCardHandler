@@ -186,7 +186,6 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 			fs.clearAll();
 		}
 
-		LinkedList<CMessageEntry> vdl = fs.getMsgDirList();
 		for (CMessageEntry messageData : fs.getMsgDirList()) {
 			if (params.getTargetDataId() == messageData.getDataId()) {
 				messageData.setActive(false);
@@ -215,7 +214,6 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 			fs.clearAll();
 		}
 
-		LinkedList<CMessageEntry> vdl = fs.getMsgDirList();
 		for (CMessageEntry messageData : fs.getMsgDirList()) {
 			if (params.getTargetDataId() == messageData.getDataId()) {
 				messageData.setActive(true);
@@ -274,6 +272,7 @@ public class CHandlerMessagesAction extends CHandlerActionFundamental {
 		return mav;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected LinkedList<CMessageEntry> createResultContentsListSeed() {
 		return new LinkedList<CMessageEntry>();

@@ -78,6 +78,34 @@ public abstract class CHandlerActionFundamental {
 		Comparator<DT> comparator;
 		// この程度なので、Builder Patternとか、Strategy Patternとかは使わなくてよいだろう。
 		switch (sortingOrder) {
+		case "indexedOrder":
+			comparator = new Comparator<DT>() {
+				@Override
+				public int compare(DT o1, DT o2) {
+					if (o1.getDataId()<o2.getDataId()) {
+						return -1;
+					} else if (o1.getDataId()>o2.getDataId()) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			};
+			break;
+		case "indexReversedOrder":
+			comparator = new Comparator<DT>() {
+				@Override
+				public int compare(DT o1, DT o2) {
+					if (o1.getDataId()>o2.getDataId()) {
+						return -1;
+					} else if (o1.getDataId()<o2.getDataId()) {
+						return 1;
+					} else {
+						return 0;
+					}
+				}
+			};
+			break;
 		case "timeReverseOrder":
 			comparator = new Comparator<DT>() {
 				@Override

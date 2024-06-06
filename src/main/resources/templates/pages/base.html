@@ -442,7 +442,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202406050841
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202406060818
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
@@ -633,7 +633,7 @@ td.nrmBase {
 								<input type="hidden" class="cBankListFrom" name="startFrom">
 								<select name="sortingOrder" id="slSortingOrderOnImageBank"
 									onchange="$('#btnShowDirectory4Bank').click();">
-									<option value="timeOrder">時間順（new -> old）</option>
+									<option value="timeOrder" selected>時間順（new -> old）</option>
 									<option value="timeReverseOrder">時間逆順（old -> new）</option>
 									<option value="nameOrder">名称順</option>
 									<option value="nameReverseOrder">名称逆順</option>
@@ -662,8 +662,8 @@ td.nrmBase {
 									class="cStartFromOnMessageList"> <input type="hidden"
 									name="sortingOrder" class="cSortingOrderOnMessageList">
 								<h3>リスト上への表示</h3>
-								<input type="text" id="txMessageDestination"
-									name="destination" style="width: 20em;"
+								<input type="text" id="txMessageDestination" name="destination"
+									style="width: 20em;"
 									oninput="executeDescriptionCount('txMessageDestination','divTotalByteOfMessageDescription',10);">
 								<div>
 									リストへの表示文字数：<span id="divTotalByteOfMessageDescription"></span>
@@ -671,7 +671,7 @@ td.nrmBase {
 								<h3>メッセージ</h3>
 								<textarea id="taMessage2Send" name="message"
 									style="width: 20em; height: 8em;"
-									oninput="executeDescriptionCount('taMessage2Send','divTotalByteOfMessage2Send',50);"></textarea>
+									oninput="executeDescriptionCount('taMessage2Send','divTotalByteOfMessage2Send',80);"></textarea>
 								<br />
 								<div>
 									テキストの文字数：<span id="divTotalByteOfMessage2Send"></span>
@@ -711,7 +711,9 @@ td.nrmBase {
 								<select name="sortingOrder" style="height: 2em;"
 									id="slSortingOrderOnMessage"
 									onchange="$('#btnShowMessageList').click();">
-									<option value="timeOrder" selected>時間順（new -> old）</option>
+									<option value="indexReversedOrder" selected>登録逆順</option>
+									<option value="indexedOrder">登録順</option>
+									<option value="timeOrder">時間順（new -> old）</option>
 									<option value="timeReverseOrder">時間逆順（old -> new）</option>
 									<option value="nameOrder">名称順</option>
 									<option value="nameReverseOrder">名称逆順</option>
@@ -757,7 +759,9 @@ td.nrmBase {
 									<select name="sortingOrder" style="height: 2em;"
 										id="slSortingOrderOnVoice"
 										onchange="$('#btnShowVoiceList').click();">
-										<option value="timeOrder" selected>時間順（new -> old）</option>
+										<option value="indexReversedOrder" selected>登録逆順</option>
+										<option value="indexedOrder">登録順</option>
+										<option value="timeOrder">時間順（new -> old）</option>
 										<option value="timeReverseOrder">時間逆順（old -> new）</option>
 										<option value="nameOrder">名称順</option>
 										<option value="nameReverseOrder">名称逆順</option>

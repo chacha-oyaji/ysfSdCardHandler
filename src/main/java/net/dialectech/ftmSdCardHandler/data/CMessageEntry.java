@@ -248,6 +248,6 @@ public class CMessageEntry extends CDataEntry {
 		if (isThisTransmission())
 			return this.date2Send;
 		else
-			return this.baseDate;
+			return this.date2Receive;
 	}
 }
