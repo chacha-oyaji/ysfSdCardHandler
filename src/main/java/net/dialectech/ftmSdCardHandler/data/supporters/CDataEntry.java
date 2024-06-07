@@ -117,6 +117,7 @@ public abstract class CDataEntry {
 			decodedString = "solid 3px #080"; // Group Monitor
 			break;
 
+		case 0x20:
 		case 0x60:
 			// 受信（未読）
 			decodedString = "solid 3px #0ff";
@@ -242,7 +243,6 @@ public abstract class CDataEntry {
 			decodedString = "#080";
 			break;
 
-		case 0x22:
 		case 0x62:
 			decodedString = "#8cc"; // GM受信（未読）
 			break;
@@ -259,6 +259,7 @@ public abstract class CDataEntry {
 			decodedString = "#846"; // GM送信（失敗）
 			break;
 
+		case 0x20:
 		case 0x60:
 			// 受信（未読）
 			decodedString = "#cff";
@@ -305,7 +306,7 @@ public abstract class CDataEntry {
 	 * 0x02： ０：通常、１：GM<br>
 	 * 0x04： ０：通常、１：Wires経由<br>
 	 * 0x10: エラービット（ただし、受信時エラーは不問、送信時エラーは記録）<br>
-	 * 0x20： ０：無線回線でない、１：無線回線である。<br>
+	 * 0x20： ０：無線回線でない、１：無線回線である。(もしかして、1:相手局がGM)<br>
 	 * 0x40： ０：既読、１：未読（ただし、送信時は不問、受信時は記録）<br>
 	 * <br>
 	 * もっとも、これらのうち、同時に「１」となった場合に、各RIGでの取り扱いは異なる。おそらく、IF文で扱いを分岐しており、その分岐の順は各RIGで異なるからであると推認される。<br>
@@ -354,6 +355,7 @@ public abstract class CDataEntry {
 			decodedString = "GM送（F）"; // Group Monitor
 			break;
 
+		case 0x20:
 		case 0x60:
 			decodedString = "受信（未）";
 			break;
