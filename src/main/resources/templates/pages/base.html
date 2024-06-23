@@ -122,6 +122,15 @@ td.nrmBase {
 		}
 	}
 
+	function hideOrShowPseudoDeletedOnMessage() {
+		var hideMode = $("#cbToggleHidePseudoDeletedOnMessage").prop("checked");
+		if (hideMode == false) {
+			$(".cDivHideMessage").hide();
+		} else {
+			$(".cDivHideMessage").show();
+		}
+	}
+
 	function hideOrShowPseudoDeletedOnVoice() {
 		var hideMode = $("#cbToggleHidePseudoDeletedOnVoice").prop("checked");
 		if (hideMode == false) {
@@ -442,7 +451,7 @@ td.nrmBase {
 			<div class="stage">
 				<div
 					style="color: red; margin: 0 auto; font-size: 24px; padding-top: 10px; padding-bottom: 10px; text-align: center;">
-					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202406060818
+					SD-CARD Handler for YAESU SYSTEM FUSIONⓇ Ver. 202406060818-2
 					<div th:if="${prop.debugMode}"
 						style="color: red; font-size: 1.2em;">(DEBUG MODE)</div>
 				</div>
@@ -705,6 +714,13 @@ td.nrmBase {
 								th:action="@{/execute/messages/showMessageList}"
 								enctype="multipart/form-data">
 								<input type="hidden" id="txtMessageListFrom" name="startFrom">
+								<div
+									style="float: left; background-color: #44c; color: white; margin-left: 10px; margin-right: 10px; padding: 5px;">
+									<label style="cursor: pointer;"> <input type="checkbox"
+										id="cbToggleHidePseudoDeletedOnMessage"
+										onchange="hideOrShowPseudoDeletedOnMessage();">疑似消去表示
+									</label>
+								</div>
 								<button type="button" id="btnShowMessageList"
 									style="height: 2em;"
 									onclick="$('#txtMessageListFrom').val(1);submitAndStore2Target('frmShowMessageList','divMessageList');">リスト再取得</button>

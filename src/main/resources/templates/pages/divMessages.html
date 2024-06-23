@@ -4,7 +4,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <script th:inline="javascript">
 	$().ready(function() {
-
+		hideOrShowPseudoDeletedOnMessage();
 	});
 
 	function date2TextConversion(date) {
@@ -81,7 +81,7 @@
 					<td>操作</td>
 				</tr>
 
-				<tr th:each="entity : ${contentsList}">
+				<tr th:each="entity : ${contentsList}" th:class="${entity.active?'cDivShowMessage':'cDivHideMessage'}">
 					<th
 						th:text="|${entity.symMeaning}(${T(java.lang.Integer).toHexString(entity.sym)})|"></th>
 					<td
