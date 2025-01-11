@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
+import org.im4java.core.ImageMagickCmd;
 import org.im4java.process.ArrayListOutputConsumer;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -65,6 +66,8 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 @RequestMapping("/execute/images")
 public class CHandlerImageAction extends CHandlerActionFundamental {
 
+	private String imageMagickConverterName = "magick.exe";
+	
 	@RequestMapping(value = "deleteImageCompletely", method = { RequestMethod.POST, RequestMethod.GET })
 	public ModelAndView actDataDeleteImageCompletely(@ModelAttribute CData4Upload param, HttpSession session,
 			ModelAndView mav) {
@@ -671,7 +674,7 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 
 		// ImageMagickの存否チェック
 		String imageMagickPathName4Check = prop.getImageMagickPath();
-		File imProcessFile = new File(imageMagickPathName4Check + "convert.exe");
+		File imProcessFile = new File(imageMagickPathName4Check + imageMagickConverterName);
 		if (!imProcessFile.exists()) {
 			errorMessageList.add("ImageMagickの指定場所に処理プログラムが見つかりません。");
 			errorMessageList.add("「対象設定」タブ中の「ImageMagickの記録場所」の指定を確認してください。");
@@ -788,8 +791,8 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 				Path newPath = Paths.get(targetDirName, ie.getFileCoreName());
 
 				// commandの生成
-				// ImageMagickCmd cmd = new ImageMagickCmd("magick");
-				ConvertCmd cmd = new ConvertCmd();
+				ImageMagickCmd cmd = new ImageMagickCmd("magick");
+				// ConvertCmd cmd = new ConvertCmd();
 				cmd.setAsyncMode(false);
 				String imageMagickPathName = prop.getImageMagickPath();
 
@@ -943,7 +946,7 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 
 		// ImageMagickの存否チェック
 		String imageMagickPathName4Check = prop.getImageMagickPath();
-		File imProcessFile = new File(imageMagickPathName4Check + "convert.exe");
+		File imProcessFile = new File(imageMagickPathName4Check + imageMagickConverterName);
 		if (!imProcessFile.exists()) {
 			errorMessageList.add("ImageMagickの指定場所に処理プログラムが見つかりません。");
 			errorMessageList.add("「対象設定」タブ中の「ImageMagickの記録場所」の指定を確認してください。");
@@ -992,7 +995,7 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 
 		// ImageMagickの存否チェック
 		String imageMagickPathName4Check = prop.getImageMagickPath();
-		File imProcessFile = new File(imageMagickPathName4Check + "convert.exe");
+		File imProcessFile = new File(imageMagickPathName4Check + imageMagickConverterName);
 		if (!imProcessFile.exists()) {
 			errorMessageList.add("ImageMagickの指定場所に処理プログラムが見つかりません。");
 			errorMessageList.add("「対象設定」タブ中の「ImageMagickの記録場所」の指定を確認してください。");

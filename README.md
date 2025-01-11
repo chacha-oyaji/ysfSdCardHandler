@@ -11,3 +11,5 @@ See manual for detail dewcriptions which is on ysfSdCardHandler/manuals/manual.p
 PROGRAMS ARE IN "master" branch.
 
 This is still Alpha-Version.
+
+This Version is for ImageMagick Version 7.1.1-43-portable-Q16-x64 which the program 'convert.exe' is obsoleted.
