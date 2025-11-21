@@ -929,6 +929,123 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		}
 		return qrCodeDetected;
 	}
+	
+	private File convertImageFileWithParameters(File inPicture,CData4Upload params,Path newPath,CImageEntry ie) {
+		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
+
+		String volumeTarget = params.getVolumeTarget() ;
+		int imageSize = params.getImageSize() ;
+		String specifiedStationName2Send = params.getSpecifiedStn2Send();
+		int posOfSuperImpose = params.getPosOfSuperImpose();
+		String specifiedColor = params.getSpecifiedColor();
+		String inAbsoluteName = null;
+
+		
+		// commandの生成
+		ImageMagickCmd cmd = new ImageMagickCmd("magick");
+		// ConvertCmd cmd = new ConvertCmd();
+		cmd.setAsyncMode(false);
+		String imageMagickPathName = prop.getImageMagickPath();
+		
+
+		cmd.setSearchPath(imageMagickPathName);
+		// operation内容の生成。
+		IMOperation op = new IMOperation();
+		op.addImage(inAbsoluteName);
+		// 出力ファイルはJPEG
+		op.define("jpeg:extent=" + volumeTarget.trim() + "kB");
+		// 大きさを正規化
+		switch (imageSize) {
+		case 160:
+			op.resize(160, 120, '!');
+			break;
+		case 320:
+		default:
+			op.resize(320, 240, '!');
+			break;
+		}
+
+		if (specifiedStationName2Send != null && !specifiedStationName2Send.trim().equals("")) {
+			// 相手局名追加（）
+			specifiedStationName2Send = StringUtils.escapeJava(specifiedStationName2Send);
+			System.out.print(">> Imposing : \"" + specifiedStationName2Send + " : ");
+
+			String letters = specifiedStationName2Send;
+			int fontSize = 640 / (letters.length() + 2); // なぜか、320ではなくその倍でちょうど狙ったあたりになる。
+			// font サイズの最大値は36にしておく。
+			if (fontSize > 36)
+				fontSize = 36;
+			op.pointsize(fontSize);
+
+			int startXOfBackground = 0;
+			int startYOfBackground = fontSize;
+			int startXOfLetter = 1;
+			int startYOfLetter = fontSize + 1;
+			int fullLengthOfLetters = fontSize * letters.length() / 2;
+			int offsetX = 0;
+			int offsetY = 0;
+			switch (posOfSuperImpose) {
+			case 0: // 上左詰
+				offsetX = 0;
+				offsetY = 0;
+				break;
+			case 1: // 上中央
+				offsetX = (320 - fullLengthOfLetters) / 2;
+				offsetY = 0;
+				break;
+			case 2: // 上右詰
+				offsetX = (320 - fullLengthOfLetters) - fontSize / 2;
+				offsetY = 0;
+				break;
+			case 8: // 下左詰
+				offsetX = 0;
+				offsetY = 235 - fontSize;
+				break;
+			case 9: // 下中央
+				offsetX = (320 - fullLengthOfLetters) / 2;
+				offsetY = 235 - fontSize;
+				break;
+			case 10: // 下右詰
+			default:
+				offsetX = (320 - fullLengthOfLetters) - fontSize / 2;
+				offsetY = 235 - fontSize;
+				break;
+			}
+			op.font("Times-New-Roman"); // font
+			op.fill("white"); // font color
+			op.draw("text " + (startXOfBackground + offsetX) + "," + (startYOfBackground + offsetY) + " '"
+					+ letters + "'");
+			op.fill(specifiedColor); // font color
+			op.draw("text " + (startXOfLetter + offsetX) + "," + (startYOfLetter + offsetY) + " '" + letters
+					+ "'"); // location of text, actual text
+		}
+		// 余計なメタタグを削除
+		op.strip();
+		op.addImage(newPath.toString());
+
+		ArrayListOutputConsumer output = new ArrayListOutputConsumer();
+		cmd.setOutputConsumer(output);
+		// execute the operation
+		long startTime = System.currentTimeMillis();
+		try {
+			cmd.run(op);
+		} catch (InterruptedException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		} catch (IM4JavaException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO 自動生成された catch ブロック
+			e.printStackTrace();
+		}
+		output.getOutput(); // 処理終了待ちのための空読み。
+		long processTime = System.currentTimeMillis() - startTime;
+		System.out.print(" Conversion complete (" + processTime + " mS) >> ");
+		long fileSize = newPath.toFile().length();
+		ie.setPictureSize((int) (fileSize & 0xffffff));
+		ie.setActive(true);
+		return null ;
+	}
 
 	@RequestMapping(value = "changeDescription", method = { RequestMethod.POST, RequestMethod.GET })
 	public ModelAndView actDataChangeDescription(@ModelAttribute CData4Upload params, HttpSession session,
