@@ -66,7 +66,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 @RequestMapping("/execute/images")
 public class CHandlerImageAction extends CHandlerActionFundamental {
 
-	private String imageMagickConverterName = "magick.exe";
+	private String imageMagickConverterName = "magick.exe";	// 直近のバージョンはこれです。
 	
 	@RequestMapping(value = "deleteImageCompletely", method = { RequestMethod.POST, RequestMethod.GET })
 	public ModelAndView actDataDeleteImageCompletely(@ModelAttribute CData4Upload param, HttpSession session,
