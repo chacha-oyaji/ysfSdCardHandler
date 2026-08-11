@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FileUtils;
-import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
 import org.im4java.core.ImageMagickCmd;
@@ -37,17 +36,10 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
-import org.thymeleaf.util.StringUtils;
-
 import jakarta.servlet.http.HttpSession;
 import net.dialectech.ftmSdCardHandler.actions.suppoters.CHandlerActionFundamental;
-import net.dialectech.ftmSdCardHandler.data.CBankEntry;
-import net.dialectech.ftmSdCardHandler.data.CData4Upload;
-import net.dialectech.ftmSdCardHandler.data.CImageEntry;
-import net.dialectech.ftmSdCardHandler.data.CVoiceEntry;
-import net.dialectech.ftmSdCardHandler.supporters.CConst;
-import net.dialectech.ftmSdCardHandler.supporters.CYsfCodeConverter;
-import net.dialectech.ftmSdCardHandler.supporters.CYsfSdCHandlerProperties;
+import net.dialectech.ftmSdCardHandler.data.*;
+import net.dialectech.ftmSdCardHandler.supporters.*;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltFlowsException;
 import net.dialectech.ftmSdCardHandler.supporters.dialectechSup.CDltSpringFileStream;
 import net.dialectech.ftmSdCardHandler.supporters.fileSystem.CYsfFileSystem;
@@ -768,7 +760,192 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 				"pages/divImages");
 		return mav;
 	}
+	private boolean convertTempFilesAndStore2Target(File[] inFiles, CData4Upload params, 
+            String specifiedStationName2Send, int posOfSuperImpose, String specifiedColor) { 
 
+        String volumeTarget = params.getVolumeTarget(); 
+        int imageSize = params.getImageSize(); 
+
+        CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance(); 
+        CYsfFileSystem fs = CYsfFileSystem.getInstance(); 
+
+        LinkedList<String> inFilesList = new LinkedList<String>(); 
+        boolean qrCodeDetected = false; 
+
+        // Windowsの日本語フォントパス（メイリオ ボールド）
+        // 環境に応じて "c:/Windows/Fonts/msgothic.ttc" 等に変更も可能です
+        String fontPath = "c:/Windows/Fonts/meiryob.ttc"; 
+        if (!new File(fontPath).exists()) {
+            fontPath = "c:/Windows/Fonts/msmincho.ttc"; // フォールバック
+        }
+
+        for (int index = 0; index < inFiles.length; ++index) { 
+            try { 
+                String inAbsoluteName = "c:\\Temp\\" + inFiles[index].getName(); 
+                inFilesList.add(inAbsoluteName); 
+                CImageEntry ie = fs.addNewPictFile(prop.getMyCallSign(), params.getDescription2Change()); 
+
+                String targetDirName = prop.getStrPhotoDirectoryPath(); 
+                Path newPath = Paths.get(targetDirName, ie.getFileCoreName()); 
+
+                // ImageMagick Command の生成 
+                ImageMagickCmd cmd = new ImageMagickCmd("magick"); 
+                cmd.setAsyncMode(false); 
+                String imageMagickPathName = prop.getImageMagickPath(); 
+                cmd.setSearchPath(imageMagickPathName); 
+
+                IMOperation op = new IMOperation(); 
+                op.addImage(inAbsoluteName); 
+
+                // 出力容量制限を指定 
+                op.define("jpeg:extent=" + volumeTarget.trim() + "kB"); 
+
+                // 大きさを正規化（アスペクト比無視でリサイズ）
+                switch (imageSize) { 
+                case 160: 
+                    op.resize(160, 120, '!'); 
+                    break; 
+                case 320: 
+                default: 
+                    op.resize(320, 240, '!'); 
+                    break; 
+                } 
+
+                // -----------------------------------------------------------------
+                // 日本語対応 文字列描画（ImageMagick 内完結・超爆速）
+                // -----------------------------------------------------------------
+                if (specifiedStationName2Send != null && !specifiedStationName2Send.trim().equals("")) { 
+                    String letters = specifiedStationName2Send.trim(); 
+                    System.out.print(">> Imposing (ImageMagick Multi-Byte) : \"" + letters + "\" : "); 
+
+                    // 画面幅 (320px / 160px) に収まるようフォントサイズを自動計算
+                    int targetCanvasWidth = (imageSize == 160) ? 160 : 320;
+                    
+                    // 全角・日本語文字を考慮したフォントサイズ計算（全角文字長をベースに調整）
+                    int fontCalcLength = letters.getBytes("MS932").length; // 全角を2文字換算
+                    int fontSize = (targetCanvasWidth * 2) / (fontCalcLength + 4); 
+                    if (fontSize > 26) fontSize = 26; 
+                    if (fontSize < 12) fontSize = 12;
+
+                    // フォントファイルの絶対パスを指定（これで日本語が確定で通ります）
+                    op.font(fontPath); 
+                    op.pointsize(fontSize); 
+
+                    // 配置場所（Gravity）の設定
+                    String gravity = "NorthWest"; 
+                    int xOffset = 6; 
+                    int yOffset = 6; 
+
+                    switch (posOfSuperImpose) { 
+                    case 0: // 上左詰 
+                        gravity = "NorthWest"; 
+                        break; 
+                    case 1: // 上中央 
+                        gravity = "North"; 
+                        xOffset = 0; 
+                        break; 
+                    case 2: // 上右詰 
+                        gravity = "NorthEast"; 
+                        break; 
+                    case 8: // 下左詰 
+                        gravity = "SouthWest"; 
+                        break; 
+                    case 9: // 下中央 
+                        gravity = "South"; 
+                        xOffset = 0; 
+                        break; 
+                    case 10: // 下右詰 
+                    default: 
+                        gravity = "SouthEast"; 
+                        break; 
+                    } 
+
+                    op.gravity(gravity);
+
+                    // カラー指定
+                    String mainColor = (specifiedColor != null && !specifiedColor.isEmpty()) ? specifiedColor : "red";
+
+                    // 【日本語対応・クッキリ影付きテキスト描画】
+                    // 1. 下地に黒の影を描画（1pxズレ）
+                    op.fill("black"); 
+                    op.annotate(0, 0, xOffset + 1, yOffset + 1, letters); 
+
+                    // 2. その上に指定色のメインテキストを描画
+                    op.fill(mainColor); 
+                    op.annotate(0, 0, xOffset, yOffset, letters); 
+                } 
+
+                // 余計な EXIF メタデータを削除して軽量化
+                op.strip(); 
+                op.addImage(newPath.toString()); 
+
+                ArrayListOutputConsumer output = new ArrayListOutputConsumer(); 
+                cmd.setOutputConsumer(output); 
+
+                long startTime = System.currentTimeMillis(); 
+                try { 
+                    cmd.run(op); 
+                } catch (InterruptedException e) { 
+                    e.printStackTrace(); 
+                } catch (IM4JavaException e) { 
+                    e.printStackTrace(); 
+                } 
+                output.getOutput(); 
+
+                long processTime = System.currentTimeMillis() - startTime; 
+                System.out.print(" Conversion complete (" + processTime + " mS) >> "); 
+
+                long fileSize = newPath.toFile().length(); 
+                ie.setPictureSize((int) (fileSize & 0xffffff)); 
+                ie.setActive(true); 
+
+                // 先頭コールサインの抽出 (Null安全処理)
+                String hisCall = "ALL"; 
+                if (specifiedStationName2Send != null && !specifiedStationName2Send.trim().isEmpty()) {
+                    Pattern pattern = Pattern.compile("[0-9a-zA-Z\\/]+", Pattern.DOTALL); 
+                    Matcher matcher = pattern.matcher(specifiedStationName2Send); 
+                    try { 
+                        if (matcher.find()) { 
+                            hisCall = matcher.group(); 
+                            if (hisCall.toUpperCase().trim().equals("CQ")) 
+                                hisCall = "ALL"; 
+                        } 
+                    } catch (Exception e) { 
+                        // hisCall = "ALL"のままとする。 
+                    } 
+                }
+                
+                ie.setDestination(hisCall); 
+                ie.setRealFileExists(true); 
+                ie.storeOwnData2Buffer(); 
+
+                String decodedQRCode = fs.analyzeQRCode(newPath.toFile().toString()); 
+                ie.setQrString(decodedQRCode); 
+                System.out.println("Registered as " + newPath.toFile().toString()); 
+                if (decodedQRCode != null) { 
+                    qrCodeDetected = true; 
+                    System.out.println(" QR Code Detected."); 
+                } 
+            } catch (Exception e) { 
+                e.printStackTrace(); 
+            } 
+        } 
+
+        // 元の一時ファイル削除 
+        for (String absFileName : inFilesList) { 
+            try { 
+                File f = new File(absFileName);
+                if (f.exists()) {
+                    System.out.println("DELETING >" + absFileName); 
+                    FileUtils.forceDelete(f); 
+                }
+            } catch (IOException e) { 
+                e.printStackTrace(); 
+            } 
+        } 
+        return qrCodeDetected; 
+    }
+	/*
 	private boolean convertTempFilesAndStore2Target(File[] inFiles, CData4Upload params,
 			String specifiedStationName2Send, int posOfSuperImpose, String specifiedColor) {
 
@@ -930,6 +1107,7 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		return qrCodeDetected;
 	}
 	
+
 	private File convertImageFileWithParameters(File inPicture,CData4Upload params,Path newPath,CImageEntry ie) {
 		CYsfSdCHandlerProperties prop = CYsfSdCHandlerProperties.getInstance();
 
@@ -1046,7 +1224,8 @@ public class CHandlerImageAction extends CHandlerActionFundamental {
 		ie.setActive(true);
 		return null ;
 	}
-
+*/
+	
 	@RequestMapping(value = "changeDescription", method = { RequestMethod.POST, RequestMethod.GET })
 	public ModelAndView actDataChangeDescription(@ModelAttribute CData4Upload params, HttpSession session,
 			ModelAndView mav) {
